@@ -1,0 +1,43 @@
+{
+  "business": {
+    "name": "BINGO SOLIDARIO",
+    "subtitle": "Stand de comidas",
+    "footer": "Gracias por su compra!",
+    "extraLine": ""
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080
+  },
+  "businessDayStartHour": 5,
+  "adminPin": "",
+  "currency": {
+    "symbol": "$",
+    "decimals": 0,
+    "thousandsSep": ".",
+    "decimalSep": ","
+  },
+  "printer": {
+    "enabled": true,
+    "mode": "network",
+    "host": "192.168.1.87",
+    "port": 9100,
+    "device": "/dev/usb/lp0",
+    "command": "lp -d TICKET -o raw {file}",
+    "file": "data/spool.bin",
+    "timeout": 6000,
+    "charsPerLine": 32,
+    "encoding": "cp850",
+    "codepage": 2,
+    "cut": true,
+    "feedLines": 3,
+    "openDrawer": false,
+    "barcode": "code39"
+  },
+  "tickets": {
+    "printReceipt": true,
+    "printStationTickets": true,
+    "receiptCopies": 1,
+    "stationTicketCopies": 1
+  }
+}

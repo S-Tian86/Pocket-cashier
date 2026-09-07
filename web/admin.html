@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ajustes</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header id="topbar" class="topbar"></header>
+  <main>
+    <h1 class="page-title">Ajustes</h1>
+
+    <div class="card">
+      <h2>Productos</h2>
+      <div class="inline-form">
+        <div class="field" style="margin:0;flex:2 1 200px"><label>Nombre</label><input id="p-name" placeholder="Ej: Completo italiano"></div>
+        <div class="field" style="margin:0;width:120px"><label>Precio</label><input id="p-price" inputmode="numeric" placeholder="2500"></div>
+        <div class="field" style="margin:0;width:150px"><label>Categoria</label><input id="p-category" placeholder="Comida" list="categorias"><datalist id="categorias"></datalist></div>
+        <div class="field" style="margin:0;width:160px"><label>Stand de retiro</label><select id="p-station"></select></div>
+        <button class="btn" id="p-add">Agregar producto</button>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Producto</th><th class="num">Precio</th><th>Categoria</th><th>Stand</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="products"></tbody>
+      </table></div>
+      <p class="muted" style="font-size:13px">Los cambios se aplican al instante. Los pedidos ya emitidos conservan el precio con que se vendieron.</p>
+    </div>
+
+    <div class="card">
+      <h2>Stands de retiro</h2>
+      <p class="muted" style="font-size:13px;margin-top:-6px">Cada stand imprime su propio ticket de retiro. Si todo se retira en un solo lugar, deja un solo stand.</p>
+      <div class="inline-form">
+        <div class="field" style="margin:0;flex:1 1 200px"><label>Nombre del stand</label><input id="s-name" placeholder="Ej: COCINA"></div>
+        <button class="btn" id="s-add">Agregar stand</button>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Stand</th><th>Productos</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="stations"></tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <h2>Datos del negocio</h2>
+      <div class="field-row">
+        <div class="field"><label>Nombre (sale grande en el ticket)</label><input id="b-name"></div>
+        <div class="field"><label>Subtitulo</label><input id="b-subtitle"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Linea extra (direccion, telefono...)</label><input id="b-extra"></div>
+        <div class="field"><label>Mensaje final</label><input id="b-footer"></div>
+      </div>
+      <button class="btn" id="save-business">Guardar</button>
+    </div>
+
+    <div class="card">
+      <h2>Impresora</h2>
+      <div class="field-row">
+        <div class="field">
+          <label>Como esta conectada</label>
+          <select id="pr-mode">
+            <option value="none">Sin impresora (solo pantalla)</option>
+            <option value="network">Por red / WiFi (IP)</option>
+            <option value="device">Puerto directo (USB en Linux, COM en Windows)</option>
+            <option value="command">Por el sistema (impresora instalada)</option>
+            <option value="file">Guardar en archivo (pruebas)</option>
+          </select>
+        </div>
+        <div class="field"><label>Ancho del papel</label>
+          <select id="pr-width"><option value="32">58 mm (32 caracteres)</option><option value="42">80 mm (42 caracteres)</option><option value="48">80 mm (48 caracteres)</option></select>
+        </div>
+      </div>
+      <div class="field-row" id="row-network">
+        <div class="field"><label>IP de la impresora</label><input id="pr-host" placeholder="192.168.1.87"></div>
+        <div class="field"><label>Puerto</label><input id="pr-port" inputmode="numeric" placeholder="9100"></div>
+      </div>
+      <div class="field" id="row-device"><label>Dispositivo</label><input id="pr-device" placeholder="/dev/usb/lp0"><div class="hint">Linux: /dev/usb/lp0 &nbsp;|&nbsp; Windows: COM3</div></div>
+      <div class="field" id="row-command"><label>Comando de impresion</label><input id="pr-command"><div class="hint">Linux/Mac: <code>lp -d NOMBRE -o raw {file}</code> &nbsp;|&nbsp; Windows (impresora compartida): <code>cmd /c copy /b {file} \\localhost\NOMBRE</code></div></div>
+      <div class="field" id="row-file"><label>Archivo</label><input id="pr-file" placeholder="data/spool.bin"></div>
+      <div class="field-row">
+        <div class="field"><label>Codigo en el ticket</label>
+          <select id="pr-barcode"><option value="code39">Codigo de barras</option><option value="qr">Codigo QR</option><option value="none">Sin codigo</option></select>
+        </div>
+        <div class="field"><label>Juego de caracteres</label>
+          <select id="pr-encoding"><option value="cp850">CP850 (recomendado)</option><option value="cp437">CP437</option><option value="cp858">CP858</option><option value="latin1">Latin1</option><option value="ascii">Sin acentos</option></select>
+        </div>
+        <div class="field"><label>Codepage (ESC t)</label><input id="pr-codepage" inputmode="numeric"><div class="hint">CP850 = 2, CP437 = 0</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Copias de la boleta</label><input id="t-receipt-copies" inputmode="numeric"></div>
+        <div class="field"><label>Copias de cada ticket de retiro</label><input id="t-station-copies" inputmode="numeric"></div>
+        <div class="field"><label>Lineas de avance antes del corte</label><input id="pr-feed" inputmode="numeric"></div>
+      </div>
+      <div class="choices">
+        <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="t-receipt"> Imprimir boleta</label>
+        <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="t-stations"> Imprimir tickets de retiro</label>
+        <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="pr-cut"> Cortar papel</label>
+        <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="pr-drawer"> Abrir cajon de dinero</label>
+      </div>
+      <div class="row-actions">
+        <button class="btn" id="save-printer">Guardar</button>
+        <button class="btn ghost" id="test-printer">Imprimir prueba</button>
+        <button class="btn ghost" id="check-printer">Probar conexion</button>
+      </div>
+      <pre id="test-output" class="ticket-preview" style="display:none;margin-top:12px"></pre>
+    </div>
+
+    <div class="card">
+      <h2>Seguridad</h2>
+      <div class="field-row">
+        <div class="field"><label>PIN para ajustes y anulaciones</label><input id="admin-pin" placeholder="Vacio = sin PIN"><div class="hint">Protege esta pagina y la anulacion de pedidos. Se guarda en este equipo para no pedirlo cada vez.</div></div>
+        <div class="field"><label>Hora en que empieza el dia comercial</label><input id="day-start" inputmode="numeric"><div class="hint">Si el evento pasa la medianoche, con 5 las ventas de las 01:00 siguen contando en el dia anterior.</div></div>
+      </div>
+      <button class="btn" id="save-security">Guardar</button>
+    </div>
+  </main>
+  <script type="module" src="/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pedidos</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header id="topbar" class="topbar"></header>
+  <main>
+    <h1 class="page-title">Pedidos del dia</h1>
+    <div class="card">
+      <div class="inline-form">
+        <div class="field" style="margin:0">
+          <label for="day">Dia</label>
+          <select id="day"></select>
+        </div>
+        <div class="field" style="margin:0">
+          <label for="filter">Buscar</label>
+          <input id="filter" placeholder="N de pedido, cliente o producto">
+        </div>
+        <button class="btn ghost" id="reload">Actualizar</button>
+        <label class="muted" style="display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="auto"> Auto-actualizar
+        </label>
+      </div>
+      <div id="summary" class="stats"></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>N</th><th>Hora</th><th>Detalle</th><th>Retiro</th>
+              <th class="num">Total</th><th>Pago</th><th>Caja</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="/pedidos.js"></script>
+</body>
+</html>

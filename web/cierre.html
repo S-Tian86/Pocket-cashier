@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cierre de caja</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header id="topbar" class="topbar"></header>
+  <main>
+    <h1 class="page-title">Cierre de caja</h1>
+    <div class="card no-print">
+      <div class="inline-form">
+        <div class="field" style="margin:0">
+          <label for="day">Dia</label>
+          <select id="day"></select>
+        </div>
+        <button class="btn" id="print">Imprimir cierre</button>
+        <button class="btn ghost" id="browser-print">Imprimir esta pagina</button>
+        <button class="btn ghost" id="csv">Descargar CSV</button>
+      </div>
+    </div>
+    <div id="content"></div>
+  </main>
+  <script type="module" src="/cierre.js"></script>
+</body>
+</html>

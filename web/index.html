@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caja</title>
+  <link rel="stylesheet" href="/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>">
+</head>
+<body>
+  <header id="topbar" class="topbar"></header>
+
+  <div class="pos">
+    <section>
+      <div class="toolbar">
+        <input id="search" class="search" type="search" autocomplete="off" placeholder="Buscar producto...  (o escribe una cantidad y toca el producto)">
+        <button class="btn ghost" id="btn-clear" title="Vaciar el pedido actual (Supr)">Vaciar</button>
+        <button class="btn ok big" id="btn-charge" title="Cobrar (F2)">Cobrar &nbsp;F2</button>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <aside class="cart">
+      <header>
+        <span>Pedido actual</span>
+        <span id="cart-count" class="tag">0 art.</span>
+      </header>
+      <div class="items" id="cart-items"></div>
+      <footer>
+        <div class="total-row">
+          <span class="label">TOTAL</span>
+          <span class="value" id="cart-total">$0</span>
+        </div>
+        <button class="btn ok big block" id="btn-charge-2">Cobrar e imprimir</button>
+      </footer>
+    </aside>
+  </div>
+
+  <script type="module" src="/pos.js"></script>
+</body>
+</html>
