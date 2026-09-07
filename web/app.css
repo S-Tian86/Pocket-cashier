@@ -129,12 +129,17 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   cursor: pointer;
+  overflow: hidden;
   transition: transform .06s ease, box-shadow .12s ease;
 }
 .product:hover { box-shadow: 0 4px 14px rgba(16,28,48,.14); }
 .product:active { transform: scale(.97); }
 .product .name { font-weight: 600; line-height: 1.25; }
-.product .meta { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
+.product .meta {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 8px; min-width: 0;
+}
+.product .price { min-width: 0; }
 .product .price { font-weight: 700; font-size: 18px; }
 .product .station {
   font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .4px;
@@ -178,8 +183,15 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .qty-btn {
   width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line);
   background: #f4f7fb; cursor: pointer; font-weight: 700; line-height: 1;
+  flex: none; touch-action: manipulation;
 }
 .qty-btn:hover { background: #e6edf7; }
+.qty-btn:active { background: var(--brand); color: #fff; }
+
+/* Ajuste de cantidad en la propia tarjeta del producto: sin teclado y sin bajar al carro. */
+.stepper { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.stepper .qty-btn { width: 34px; height: 34px; font-size: 18px; }
+.stepper .badge { min-width: 26px; text-align: center; }
 .qty { min-width: 28px; text-align: center; font-weight: 700; color: var(--ink); }
 .line .total { font-weight: 700; }
 .link-btn { background: none; border: none; color: var(--danger); cursor: pointer; padding: 2px 4px; font-size: 13px; }
@@ -288,10 +300,41 @@ tr.void td { color: #96a0ae; text-decoration: line-through; }
 .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .inline-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
 
+/* ------------------------------------------------------- barra de telefono */
+.mobile-bar { display: none; }
+.key-hint { opacity: .75; font-size: .85em; }
+
 @media (max-width: 900px) {
-  .pos { grid-template-columns: 1fr; }
+  .pos { grid-template-columns: 1fr; padding-bottom: 84px; }
   .cart { position: static; max-height: none; }
-  .topbar { flex-wrap: wrap; }
+  .topbar { flex-wrap: wrap; row-gap: 8px; position: static; }
+  .topbar .brand { font-size: 15px; }
+  .topbar nav { width: 100%; margin-left: 0; justify-content: space-between; }
+  .key-hint { display: none; }
+  /* el cobro vive en la barra fija de abajo: arriba solo estorba */
+  .toolbar #btn-charge { display: none; }
+  .search { flex: 1 1 100%; }
+
+  /* Objetivos tactiles mas grandes y numeros mas legibles a distancia */
+  .product { min-height: 104px; }
+  .stepper .qty-btn { width: 44px; height: 44px; font-size: 22px; }
+  .stepper .badge { font-size: 16px; min-width: 30px; }
+  .line .qty-btn { width: 44px; height: 44px; font-size: 20px; }
+  .line .qty { font-size: 18px; min-width: 34px; }
+
+  .mobile-bar {
+    display: flex; align-items: center; gap: 10px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--line);
+    box-shadow: 0 -4px 16px rgba(16, 28, 48, .12);
+  }
+  .mobile-bar .bar-detail {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    background: none; border: none; padding: 6px 2px; cursor: pointer; text-align: left;
+  }
+  .mobile-bar .bar-total { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+  .mobile-bar .btn { padding: 14px 22px; font-size: 17px; }
 }
 
 @media print {

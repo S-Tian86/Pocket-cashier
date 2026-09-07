@@ -24,6 +24,8 @@ async function init() {
   $('btn-clear').addEventListener('click', () => clearCart({ confirm: true }));
   $('btn-charge').addEventListener('click', openChargeDialog);
   $('btn-charge-2').addEventListener('click', openChargeDialog);
+  $('btn-charge-3').addEventListener('click', openChargeDialog);
+  $('bar-detail').addEventListener('click', () => document.querySelector('.cart').scrollIntoView({ behavior: 'smooth', block: 'start' }));
   document.addEventListener('keydown', onGlobalKey);
   setInterval(refreshPrinterStatus, 60000);
   $('search').focus();
@@ -79,17 +81,37 @@ function renderProducts() {
   }
   grid.replaceChildren(...products.map((product) => {
     const inCart = cart.get(product.id);
-    return el('button', {
+    return el('div', {
       class: `product ${inCart ? 'in-cart' : ''}`,
+      role: 'button',
+      tabindex: '0',
       onclick: () => addToCart(product),
+      onkeydown: (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); addToCart(product); } },
     }, [
       el('span', { class: 'name', text: product.name }),
       el('span', { class: 'meta' }, [
         el('span', { class: 'price', text: money(product.price) }),
-        inCart ? el('span', { class: 'badge', text: `x${inCart.qty}` }) : el('span', { class: 'station', text: stationName(product) }),
+        inCart
+          // ya esta en el pedido: se ajusta la cantidad aqui mismo, sin abrir el teclado
+          ? el('span', { class: 'stepper' }, [
+            stepButton('-', 'Quitar uno', () => setQty(product.id, inCart.qty - 1)),
+            el('span', { class: 'badge', text: `${inCart.qty}` }),
+            stepButton('+', 'Agregar uno', () => setQty(product.id, inCart.qty + 1)),
+          ])
+          : el('span', { class: 'station', text: stationName(product) }),
       ]),
     ]);
   }));
+}
+
+/** Boton +/- dentro de la tarjeta: no debe disparar el click de la tarjeta. */
+function stepButton(label, title, action) {
+  return el('button', {
+    class: 'qty-btn',
+    title,
+    'aria-label': title,
+    onclick: (event) => { event.stopPropagation(); action(); },
+  }, [label]);
 }
 
 // --------------------------------------------------------------------- carro
@@ -148,9 +170,12 @@ function renderCart() {
   }
   $('cart-total').textContent = money(cartTotal());
   $('cart-count').textContent = `${cartCount()} art.`;
+  $('bar-total').textContent = money(cartTotal());
+  $('bar-count').textContent = `${cartCount()} art.`;
   const disabled = cart.size === 0;
   $('btn-charge').disabled = disabled;
   $('btn-charge-2').disabled = disabled;
+  $('btn-charge-3').disabled = disabled;
 }
 
 function clearCart({ confirm = false } = {}) {

@@ -13,9 +13,9 @@
   <div class="pos">
     <section>
       <div class="toolbar">
-        <input id="search" class="search" type="search" autocomplete="off" placeholder="Buscar producto...  (o escribe una cantidad y toca el producto)">
+        <input id="search" class="search" type="search" autocomplete="off" placeholder="Buscar producto..." title="Truco: escribe una cantidad (por ejemplo 3) y toca el producto para agregar esa cantidad de una vez">
         <button class="btn ghost" id="btn-clear" title="Vaciar el pedido actual (Supr)">Vaciar</button>
-        <button class="btn ok big" id="btn-charge" title="Cobrar (F2)">Cobrar &nbsp;F2</button>
+        <button class="btn ok big" id="btn-charge" title="Cobrar (F2)">Cobrar <span class="key-hint">F2</span></button>
       </div>
       <div class="tabs" id="tabs"></div>
       <div class="grid" id="grid"></div>
@@ -35,6 +35,15 @@
         <button class="btn ok big block" id="btn-charge-2">Cobrar e imprimir</button>
       </footer>
     </aside>
+  </div>
+
+  <!-- Barra fija para telefono: el total y el boton de cobrar siempre a la vista -->
+  <div class="mobile-bar" id="mobile-bar">
+    <button class="bar-detail" id="bar-detail" title="Ver el detalle del pedido">
+      <span class="tag" id="bar-count">0 art.</span>
+      <span class="bar-total" id="bar-total">$0</span>
+    </button>
+    <button class="btn ok" id="btn-charge-3">Cobrar</button>
   </div>
 
   <script type="module" src="/pos.js"></script>

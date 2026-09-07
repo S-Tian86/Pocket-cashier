@@ -64,9 +64,15 @@ El indicador verde/rojo de la barra superior muestra si la impresora está respo
 **Pantalla Caja**
 
 1. Tocar los productos para armar el pedido (tocar de nuevo suma otra unidad).
-2. Para cargar varias unidades de una: escribir la cantidad (`3`) y tocar el producto.
-3. Botón **Cobrar** (o `F2`): elegir medio de pago, escribir con cuánto paga y confirmar.
-4. Se imprimen la boleta y los tickets de retiro, y la pantalla muestra el **vuelto** en grande.
+2. Una vez agregado, la tarjeta muestra **`−  2  +`** para subir o bajar la cantidad ahí mismo,
+   sin bajar al carro y sin abrir el teclado del celular.
+3. Atajo de teclado: escribir la cantidad (`3`) y tocar el producto la carga de una vez.
+4. Botón **Cobrar** (o `F2`): elegir medio de pago, escribir con cuánto paga y confirmar.
+5. Se imprimen la boleta y los tickets de retiro, y la pantalla muestra el **vuelto** en grande.
+
+En celular y tablet hay una **barra fija abajo** con el total y el botón Cobrar siempre a la
+vista; tocando el total se salta al detalle del pedido. Los botones `−` / `+` miden 44 px
+(el mínimo recomendado para dedos).
 
 | Atajo | Acción |
 |---|---|
