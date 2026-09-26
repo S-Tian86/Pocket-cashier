@@ -51,6 +51,10 @@ Después de guardar, usar **Imprimir prueba**: sale un ticket con acentos, el an
 un código de barras. Si los acentos salen raros, cambiar el *juego de caracteres* (CP850 suele
 funcionar; algunas impresoras chinas usan CP437) y volver a probar.
 
+Si los acentos salen como **letras chinas** y cambiar el juego de caracteres no hace ninguna
+diferencia, la impresora está en modo chino (GB18030) e ignora el cambio de codepage: marcar
+**Desactivar modo chino** en Ajustes.
+
 En Linux, si aparece "sin permisos" para `/dev/usb/lp0`:
 
 ```sh
@@ -204,7 +208,7 @@ Copiar la carpeta `data/` es respaldo suficiente. Son archivos de texto: se pued
 ## 7. Desarrollo
 
 ```sh
-npm test        # 33 pruebas: tickets, ESC/POS, correlativos, cierre, cola del stand y API
+npm test        # 34 pruebas: tickets, ESC/POS, correlativos, cierre, cola del stand y API
 node server.js  # levanta la caja
 ```
 

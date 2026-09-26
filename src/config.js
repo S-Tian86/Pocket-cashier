@@ -34,6 +34,7 @@ export const DEFAULTS = {
     charsPerLine: 32,
     encoding: 'cp850',
     codepage: 2,
+    cancelChineseMode: false,
     cut: true,
     feedLines: 3,
     openDrawer: false,

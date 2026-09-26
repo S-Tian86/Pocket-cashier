@@ -5,6 +5,7 @@ import { wrap, stripAccents } from './util.js';
 
 const ESC = 0x1b;
 const GS = 0x1d;
+const FS = 0x1c;
 
 // Tabla base compartida por CP437 / CP850 / CP858.
 const BASE_CP = {
@@ -68,13 +69,16 @@ function asciiFallback(char) {
 }
 
 export class Ticket {
-  constructor({ width = 32, encoding = 'cp850', codepage = 2 } = {}) {
+  constructor({ width = 32, encoding = 'cp850', codepage = 2, cancelChineseMode = false } = {}) {
     this.width = width;
     this.encoding = encoding;
     this.chunks = [];
     this.lines = []; // vista previa
     this.state = { align: 'left', bold: false, scaleW: 1, scaleH: 1 };
     this.raw([ESC, 0x40]); // inicializar
+    // Muchas termicas chinas parten en modo GB18030: ignoran ESC t y leen los acentos
+    // como caracteres chinos. FS . las devuelve al modo de un byte por caracter.
+    if (cancelChineseMode) this.raw([FS, 0x2e]);
     if (codepage !== null && codepage !== undefined) this.raw([ESC, 0x74, Number(codepage)]);
   }
 

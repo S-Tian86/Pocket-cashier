@@ -24,6 +24,7 @@ function newTicket() {
     width: Number(printer.charsPerLine) || 32,
     encoding: printer.encoding || 'cp850',
     codepage: printer.codepage,
+    cancelChineseMode: Boolean(printer.cancelChineseMode),
   });
 }
 
