@@ -1,6 +1,7 @@
 // Resumen del dia: lo que se vendio, por producto, stand, caja y medio de pago.
 import { listOrders, listDays } from './store.js';
 import { businessDay, localDateTime } from './util.js';
+import { pickupLines } from './lines.js';
 
 export async function dailyReport(day = businessDay()) {
   const orders = await listOrders({ day });
@@ -37,12 +38,15 @@ export async function dailyReport(day = businessDay()) {
       product.qty += item.qty;
       product.total += item.subtotal;
       byProduct.set(productKey, product);
+    }
 
-      const stationKey = String(item.stationId ?? 'null');
+    // por stand se cuenta lo que entrega cada uno: una promo reparte su precio entre sus stands
+    for (const line of pickupLines(order)) {
+      const stationKey = String(line.stationId ?? 'null');
       const station = byStation.get(stationKey)
-        || { stationId: item.stationId ?? null, name: item.stationName || 'RETIRO', qty: 0, total: 0 };
-      station.qty += item.qty;
-      station.total += item.subtotal;
+        || { stationId: line.stationId ?? null, name: line.stationName || 'RETIRO', qty: 0, total: 0 };
+      station.qty += line.qty;
+      station.total += line.amount;
       byStation.set(stationKey, station);
     }
   }

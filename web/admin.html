@@ -18,13 +18,40 @@
         <div class="field" style="margin:0;width:120px"><label>Precio</label><input id="p-price" inputmode="numeric" placeholder="2500"></div>
         <div class="field" style="margin:0;width:150px"><label>Categoria</label><input id="p-category" placeholder="Comida" list="categorias"><datalist id="categorias"></datalist></div>
         <div class="field" style="margin:0;width:160px"><label>Stand de retiro</label><select id="p-station"></select></div>
+        <div class="field" style="margin:0;width:110px"><label>Stock</label><input id="p-stock" inputmode="numeric" placeholder="Sin limite"></div>
         <button class="btn" id="p-add">Agregar producto</button>
       </div>
       <div style="overflow-x:auto"><table>
-        <thead><tr><th>Producto</th><th class="num">Precio</th><th>Categoria</th><th>Stand</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Producto</th><th class="num">Precio</th><th>Categoria</th><th>Stand</th><th class="num">Stock</th><th>Estado</th><th></th></tr></thead>
         <tbody id="products"></tbody>
       </table></div>
-      <p class="muted" style="font-size:13px">Los cambios se aplican al instante. Los pedidos ya emitidos conservan el precio con que se vendieron.</p>
+      <p class="muted" style="font-size:13px">Los cambios se aplican al instante. Los pedidos ya emitidos conservan el precio con que se vendieron.
+        Stock vacio = se vende sin limite. <strong>Reponer</strong> suma a lo que quede, sin pisar lo que se vende mientras tanto; anular un pedido devuelve su stock.</p>
+    </div>
+
+    <div class="card">
+      <h2>Promos y packs</h2>
+      <p class="muted" style="font-size:13px;margin-top:-6px">Una promo aparece en la caja como un producto mas, con su propio precio; no se aplica sola.
+        Al venderla descuenta el stock de lo que incluye y cada producto sale en el ticket de su stand.</p>
+      <div class="inline-form">
+        <div class="field" style="margin:0;flex:2 1 200px"><label>Nombre de la promo</label><input id="promo-name" placeholder="Ej: Completo + bebida"></div>
+        <div class="field" style="margin:0;width:120px"><label>Precio</label><input id="promo-price" inputmode="numeric" placeholder="3000"></div>
+        <div class="field" style="margin:0;width:150px"><label>Categoria</label><input id="promo-category" value="Promos" list="categorias"></div>
+      </div>
+      <div class="inline-form">
+        <div class="field" style="margin:0;flex:2 1 200px"><label>Incluye</label><select id="promo-part"></select></div>
+        <div class="field" style="margin:0;width:90px"><label>Cantidad</label><input id="promo-part-qty" inputmode="numeric" value="1"></div>
+        <button class="btn ghost" id="promo-part-add">Agregar a la promo</button>
+      </div>
+      <div id="promo-parts" class="choices" style="margin:8px 0"></div>
+      <div class="row-actions">
+        <button class="btn" id="promo-save">Crear promo</button>
+        <button class="btn ghost" id="promo-cancel" hidden>Cancelar edicion</button>
+      </div>
+      <div style="overflow-x:auto;margin-top:12px"><table>
+        <thead><tr><th>Promo</th><th class="num">Precio</th><th>Incluye</th><th class="num">Precio normal</th><th class="num">Disponibles</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="promos"></tbody>
+      </table></div>
     </div>
 
     <div class="card">

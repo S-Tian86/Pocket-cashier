@@ -1,5 +1,5 @@
 // Ajustes: catalogo de productos, stands, datos del negocio e impresora.
-import { api, loadConfig, state, money, el, toast, confirmDialog, renderTopbar, refreshPrinterStatus } from './common.js';
+import { api, loadConfig, state, money, el, toast, openModal, confirmDialog, renderTopbar, refreshPrinterStatus } from './common.js';
 
 const $ = (id) => document.getElementById(id);
 let settings = null;
@@ -48,6 +48,10 @@ function wire() {
   $('test-printer').addEventListener('click', testPrinter);
   $('check-printer').addEventListener('click', checkPrinter);
   $('pr-mode').addEventListener('change', togglePrinterRows);
+  $('promo-part-add').addEventListener('click', addPromoPart);
+  $('promo-part-qty').addEventListener('keydown', (event) => { if (event.key === 'Enter') addPromoPart(); });
+  $('promo-save').addEventListener('click', savePromo);
+  $('promo-cancel').addEventListener('click', resetPromoForm);
 }
 
 // ------------------------------------------------------------------ catalogo
@@ -57,21 +61,31 @@ async function reload() {
   renderCatalog();
 }
 
+function isPromo(product) {
+  return Array.isArray(product.components) && product.components.length > 0;
+}
+
+function productName(id) {
+  return state.config.products.find((product) => product.id === id)?.name || '?';
+}
+
 function renderCatalog() {
   const stations = state.config.stations;
-  const products = [...state.config.products].sort((a, b) => (a.category || '').localeCompare(b.category || '') || a.name.localeCompare(b.name));
+  const all = [...state.config.products].sort((a, b) => (a.category || '').localeCompare(b.category || '') || a.name.localeCompare(b.name));
+  const products = all.filter((product) => !isPromo(product));
 
   $('p-station').replaceChildren(
     ...stations.map((station) => el('option', { value: station.id, text: station.name })),
     el('option', { value: '', text: 'Sin stand' }),
   );
-  $('categorias').replaceChildren(...[...new Set(products.map((p) => p.category).filter(Boolean))].map((c) => el('option', { value: c })));
+  $('categorias').replaceChildren(...[...new Set(all.map((p) => p.category).filter(Boolean))].map((c) => el('option', { value: c })));
 
   $('products').replaceChildren(...products.map((product) => el('tr', { class: product.active === false ? 'void' : '' }, [
     el('td', {}, [editable(product, 'name', 'text')]),
     el('td', { class: 'num' }, [editable(product, 'price', 'number')]),
     el('td', {}, [editable(product, 'category', 'text')]),
     el('td', {}, [stationSelect(product)]),
+    el('td', { class: 'num' }, [stockCell(product)]),
     el('td', {}, [el('button', {
       class: `tag ${product.active === false ? 'bad' : 'ok'}`,
       style: 'cursor:pointer;border:none',
@@ -79,6 +93,8 @@ function renderCatalog() {
     }, [product.active === false ? 'Oculto' : 'Activo'])]),
     el('td', {}, [el('button', { class: 'btn danger small', onclick: () => removeProduct(product) }, ['Borrar'])]),
   ])));
+
+  renderPromos(all.filter(isPromo), products);
 
   $('stations').replaceChildren(...stations.map((station) => {
     const count = products.filter((product) => product.stationId === station.id).length;
@@ -108,6 +124,164 @@ function editable(product, field, type) {
   });
 }
 
+/** Stock: el numero fija la cantidad exacta (vacio = sin limite); Reponer suma sobre lo que haya. */
+function stockCell(product) {
+  const tracked = product.stock !== null && product.stock !== undefined;
+  return el('div', { style: 'display:flex;gap:6px;align-items:center;justify-content:flex-end' }, [
+    el('input', {
+      value: tracked ? product.stock : '',
+      placeholder: 'Sin limite',
+      inputmode: 'numeric',
+      style: `width:80px;text-align:right${tracked && product.stock <= 5 ? ';color:var(--danger);font-weight:700' : ''}`,
+      onchange: (event) => adjustStock(product, { set: event.target.value.trim() }),
+    }),
+    tracked ? el('button', { class: 'btn ghost small', onclick: () => restock(product) }, ['Reponer']) : null,
+  ]);
+}
+
+async function adjustStock(product, body) {
+  try {
+    await api(`/api/products/${product.id}/stock`, { method: 'POST', body });
+    await reload();
+  } catch (err) {
+    toast('No se pudo cambiar el stock', { detail: err.message, type: 'bad' });
+    await reload();
+  }
+}
+
+function restock(product) {
+  const input = el('input', { inputmode: 'numeric', placeholder: 'Ej: 20' });
+  const save = async () => {
+    const add = Number.parseInt(input.value, 10);
+    if (!add) { input.focus(); return; }
+    close();
+    await adjustStock(product, { add });
+    toast(`${product.name}: ${add > 0 ? '+' : ''}${add}`, { type: 'ok' });
+  };
+  const { close } = openModal([
+    el('h2', { text: `Reponer ${product.name}` }),
+    el('p', { class: 'sub', text: `Quedan ${product.stock}. Escribe cuantas unidades llegaron (o un numero negativo para descontar mermas).` }),
+    el('div', { class: 'field' }, [input]),
+    el('div', { class: 'modal-actions' }, [
+      el('button', { class: 'btn ghost', onclick: () => close() }, ['Cancelar']),
+      el('button', { class: 'btn', onclick: save }, ['Sumar al stock']),
+    ]),
+  ]);
+  input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); save(); } });
+  setTimeout(() => input.focus(), 30);
+}
+
+// -------------------------------------------------------------------- promos
+
+let promoParts = []; // [{ productId, qty }] de la promo que se esta armando
+let editingPromo = null;
+
+function renderPromos(promos, products) {
+  const current = $('promo-part').value;
+  $('promo-part').replaceChildren(...products.filter((product) => product.active !== false)
+    .map((product) => el('option', { value: product.id, text: `${product.name} (${money(product.price)})` })));
+  if (current) $('promo-part').value = current;
+  renderPromoParts();
+
+  $('promos').replaceChildren(...promos.map((promo) => {
+    const regular = promo.components.reduce((sum, part) => sum + (state.config.products.find((p) => p.id === part.productId)?.price || 0) * part.qty, 0);
+    const left = promoAvailable(promo);
+    return el('tr', { class: promo.active === false ? 'void' : '' }, [
+      el('td', {}, [editable(promo, 'name', 'text')]),
+      el('td', { class: 'num' }, [editable(promo, 'price', 'number')]),
+      el('td', { text: promo.components.map((part) => `${part.qty} ${productName(part.productId)}`).join(' + ') }),
+      el('td', { class: 'num', text: money(regular) }),
+      el('td', { class: 'num', text: left === null ? 'Sin limite' : String(left) }),
+      el('td', {}, [el('button', {
+        class: `tag ${promo.active === false ? 'bad' : 'ok'}`,
+        style: 'cursor:pointer;border:none',
+        onclick: () => updateProduct(promo, { active: promo.active === false }),
+      }, [promo.active === false ? 'Oculto' : 'Activo'])]),
+      el('td', {}, [el('div', { class: 'row-actions' }, [
+        el('button', { class: 'btn ghost small', onclick: () => editPromo(promo) }, ['Editar']),
+        el('button', { class: 'btn danger small', onclick: () => removeProduct(promo) }, ['Borrar']),
+      ])]),
+    ]);
+  }));
+  if (!promos.length) {
+    $('promos').replaceChildren(el('tr', {}, [el('td', { colspan: 7, class: 'muted', text: 'Todavia no hay promos.' })]));
+  }
+}
+
+function promoAvailable(promo) {
+  let left = null;
+  for (const part of promo.components) {
+    const base = state.config.products.find((p) => p.id === part.productId);
+    if (!base || base.stock === null || base.stock === undefined) continue;
+    const fits = Math.floor(base.stock / part.qty);
+    left = left === null ? fits : Math.min(left, fits);
+  }
+  return left;
+}
+
+function renderPromoParts() {
+  $('promo-parts').replaceChildren(...promoParts.map((part, index) => el('span', { class: 'choice', style: 'flex:0 0 auto' }, [
+    `${part.qty} x ${productName(part.productId)} `,
+    el('button', {
+      class: 'link-btn',
+      title: 'Quitar de la promo',
+      onclick: () => { promoParts.splice(index, 1); renderPromoParts(); },
+    }, ['Quitar']),
+  ])));
+  if (!promoParts.length) $('promo-parts').replaceChildren(el('span', { class: 'muted', style: 'font-size:13px', text: 'Elige los productos que incluye la promo.' }));
+}
+
+function addPromoPart() {
+  const productId = Number($('promo-part').value);
+  const qty = Number.parseInt($('promo-part-qty').value, 10) || 1;
+  if (!productId || qty <= 0) return;
+  const existing = promoParts.find((part) => part.productId === productId);
+  if (existing) existing.qty += qty;
+  else promoParts.push({ productId, qty });
+  $('promo-part-qty').value = '1';
+  renderPromoParts();
+}
+
+function editPromo(promo) {
+  editingPromo = promo;
+  $('promo-name').value = promo.name;
+  $('promo-price').value = promo.price;
+  $('promo-category').value = promo.category || '';
+  promoParts = promo.components.map((part) => ({ ...part }));
+  $('promo-save').textContent = 'Guardar cambios';
+  $('promo-cancel').hidden = false;
+  renderPromoParts();
+  $('promo-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('promo-name').focus();
+}
+
+function resetPromoForm() {
+  editingPromo = null;
+  promoParts = [];
+  $('promo-name').value = '';
+  $('promo-price').value = '';
+  $('promo-category').value = 'Promos';
+  $('promo-save').textContent = 'Crear promo';
+  $('promo-cancel').hidden = true;
+  renderPromoParts();
+}
+
+async function savePromo() {
+  const name = $('promo-name').value.trim();
+  if (!name) { $('promo-name').focus(); return; }
+  if (!promoParts.length) { toast('Agrega al menos un producto a la promo', { type: 'bad' }); return; }
+  const body = { name, price: $('promo-price').value, category: $('promo-category').value, components: promoParts };
+  try {
+    if (editingPromo) await api(`/api/products/${editingPromo.id}`, { method: 'PUT', body: { ...editingPromo, ...body } });
+    else await api('/api/products', { method: 'POST', body });
+    toast(editingPromo ? 'Promo actualizada' : 'Promo creada', { type: 'ok' });
+    resetPromoForm();
+    await reload();
+  } catch (err) {
+    toast('No se pudo guardar la promo', { detail: err.message, type: 'bad' });
+  }
+}
+
 function stationSelect(product) {
   const select = el('select', {
     style: 'width:100%',
@@ -131,10 +305,12 @@ async function addProduct() {
         price: $('p-price').value,
         category: $('p-category').value,
         stationId: $('p-station').value === '' ? null : Number($('p-station').value),
+        stock: $('p-stock').value.trim(),
       },
     });
     $('p-name').value = '';
     $('p-price').value = '';
+    $('p-stock').value = '';
     $('p-name').focus();
     await reload();
     toast('Producto agregado', { type: 'ok' });
@@ -156,8 +332,12 @@ async function updateProduct(product, patch) {
 async function removeProduct(product) {
   const ok = await confirmDialog('Borrar producto', `Se borrara "${product.name}" del catalogo. Los pedidos antiguos no cambian. Si solo quieres esconderlo, usa el boton Activo/Oculto.`, { danger: true, confirmText: 'Borrar' });
   if (!ok) return;
-  await api(`/api/products/${product.id}`, { method: 'DELETE' });
-  await reload();
+  try {
+    await api(`/api/products/${product.id}`, { method: 'DELETE' });
+    await reload();
+  } catch (err) {
+    toast('No se pudo borrar', { detail: err.message, type: 'bad' });
+  }
 }
 
 async function addStation() {

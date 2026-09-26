@@ -3,6 +3,7 @@
 // pocos segundos por el hotspot y la respuesta tiene que ser liviana.
 import { getCatalog, listOrders, HttpError } from './store.js';
 import { businessDay, localDateTime, toInt } from './util.js';
+import { pickupLines } from './lines.js';
 
 export const DELIVERED_LIMIT = 15;
 const MAX_DELIVERED_LIMIT = 50;
@@ -10,7 +11,7 @@ const MAX_DELIVERED_LIMIT = 50;
 /** Solo los productos del stand, sumando lineas del mismo producto con la misma nota. */
 function stationItems(order, key) {
   const lines = new Map();
-  for (const item of order.items) {
+  for (const item of pickupLines(order)) {
     if (String(item.stationId ?? 'null') !== key) continue;
     const note = item.note || '';
     const lineKey = `${item.productId}|${note}`;

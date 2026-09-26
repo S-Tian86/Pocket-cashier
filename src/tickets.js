@@ -5,6 +5,7 @@
 import * as config from './config.js';
 import { Ticket } from './escpos.js';
 import { money, humanDate, humanDateTime, humanTime } from './util.js';
+import { pickupLines } from './lines.js';
 
 export const PAYMENT_LABELS = {
   efectivo: 'Efectivo',
@@ -50,15 +51,15 @@ function footer(ticket, order) {
   return ticket;
 }
 
-/** Agrupa los productos por estacion: una estacion = un ticket de retiro. */
+/** Agrupa los productos por estacion: una estacion = un ticket de retiro. Las promos van abiertas. */
 export function groupByStation(order) {
   const groups = new Map();
-  for (const item of order.items) {
-    const key = String(item.stationId ?? 'null');
+  for (const line of pickupLines(order)) {
+    const key = String(line.stationId ?? 'null');
     if (!groups.has(key)) {
-      groups.set(key, { stationId: item.stationId ?? null, stationName: item.stationName || 'RETIRO', items: [] });
+      groups.set(key, { stationId: line.stationId ?? null, stationName: line.stationName || 'RETIRO', items: [] });
     }
-    groups.get(key).items.push(item);
+    groups.get(key).items.push(line);
   }
   return [...groups.values()];
 }
@@ -81,7 +82,10 @@ export function buildReceipt(order, { copyLabel = '' } = {}) {
   for (const item of order.items) {
     ticket.wrapped(item.name);
     ticket.cols(`  ${item.qty} x ${money(item.price)}`, money(item.subtotal));
-    if (item.note) ticket.wrapped(`  (${item.note})`);
+    for (const component of item.components || []) {
+      ticket.wrapped(`- ${component.qty * item.qty} ${component.name}`, { indent: '  ' });
+    }
+    if (item.note) ticket.wrapped(`(${item.note})`, { indent: '  ' });
   }
 
   ticket.sep();
@@ -124,7 +128,9 @@ export function buildStationTicket(order, group, index, totalTickets) {
     ticket.size(1, 2);
     ticket.wrapped(`${item.qty} x ${item.name}`);
     ticket.size(1, 1);
-    if (item.note) ticket.wrapped(`   (${item.note})`);
+    // la boleta dice el nombre de la promo: el stand ve de cual viene para cuadrar
+    if (item.promo) ticket.wrapped(`de: ${item.promo}`, { indent: '   ' });
+    if (item.note) ticket.wrapped(`(${item.note})`, { indent: '   ' });
   }
 
   ticket.sep();
