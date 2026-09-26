@@ -1,5 +1,5 @@
 // Pantalla de caja: catalogo, carro y cobro.
-import { api, loadConfig, state, money, parseAmount, el, toast, openModal, renderTopbar, getCashier, refreshPrinterStatus } from './common.js';
+import { api, loadConfig, requireRole, state, money, parseAmount, el, toast, openModal, renderTopbar, getCashier, refreshPrinterStatus } from './common.js';
 
 const cart = new Map(); // productId -> { product, qty, note }
 let category = 'TODOS';
@@ -12,6 +12,7 @@ init().catch((err) => {
 
 async function init() {
   await loadConfig();
+  if (!requireRole('cashier')) return;
   document.title = `Caja - ${state.config.business.name}`;
   renderTopbar('caja');
   restoreCart();

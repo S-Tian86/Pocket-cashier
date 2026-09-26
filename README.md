@@ -36,6 +36,36 @@ La consola muestra las direcciones para abrir la caja:
 
 Para cambiar el puerto: `node server.js --port 9000`.
 
+### Entrar desde internet (sin compartir la red)
+
+Si no hay una red para todos, la caja se puede publicar en internet con un túnel de Cloudflare
+(gratis, sin cuenta). Así **solo el PC de la impresora necesita internet** (por ejemplo, compartido
+desde un celular) y el resto entra con sus datos móviles.
+
+1. Instalar cloudflared una vez: `winget install --id Cloudflare.cloudflared`
+2. Iniciar con **`start-tunnel.bat`** (o `node server.js --tunnel`). La consola muestra la
+   dirección (`https://algo-al-azar.trycloudflare.com`) y los códigos.
+3. En **Ajustes → Acceso remoto**, imprimir **Acceso cajas** y **Acceso stands**: cada ticket trae
+   un QR que entra directo con su código, y el código escrito por si no hay cámara.
+
+Con códigos hay tres roles:
+
+| Rol | Cómo entra | Qué puede hacer |
+|---|---|---|
+| Stand | código de stands | ver la cola de su stand y marcar entregas |
+| Caja | código de cajas | además cobrar, ver pedidos, reimprimir y cierre |
+| Administrador | el PC de la impresora, o caja + PIN | además Ajustes y anular pedidos |
+
+- Si se inicia el túnel sin códigos, se crean solos: la caja nunca queda abierta a cualquiera.
+- Sin PIN de administrador, Ajustes solo se abre en el PC de la impresora.
+- Tras 10 códigos equivocados, esa conexión espera 10 minutos.
+- Cambiar un código en Ajustes desconecta a quienes entraron con el anterior.
+- **La dirección cambia cada vez que se inicia el túnel**: hay que reimprimir los accesos. Si el
+  internet del PC se corta un buen rato, Cloudflare da de baja la dirección: la caja lo detecta
+  (prueba su dirección cada minuto) y a los ~3 minutos abre un túnel nuevo. La dirección nueva
+  aparece en la consola y en Ajustes → Acceso remoto; hay que reimprimir los accesos.
+- Todo sigue pasando por el PC: si se apaga o pierde internet, los celulares no pueden cobrar.
+
 ## 2. Configurar la impresora
 
 Todo se configura desde la pestaña **Ajustes** (o editando `config.json`). Hay cuatro formas de conectarla:
@@ -237,7 +267,7 @@ Copiar la carpeta `data/` es respaldo suficiente. Son archivos de texto: se pued
 ## 7. Desarrollo
 
 ```sh
-npm test        # 41 pruebas: tickets, ESC/POS, correlativos, cierre, stock, promos, cola del stand y API
+npm test        # 48 pruebas: tickets, ESC/POS, correlativos, cierre, stock, promos, cola del stand, acceso y API
 node server.js  # levanta la caja
 ```
 
@@ -251,6 +281,8 @@ src/tickets.js     diseño de boleta, tickets de retiro y cierre
 src/reports.js     resumen del día
 src/queue.js       cola de retiro de un stand (GET /api/stations/:id/queue)
 src/lines.js       lo que entrega cada stand (abre las promos) y lo que descuenta del stock
+src/access.js      roles y codigos de acceso, bloqueo por intentos fallidos
+src/tunnel.js      tunel de Cloudflare para entrar desde internet
 src/api.js         endpoints JSON
 web/               interfaz (caja, pedidos, stand, cierre, ajustes)
 ```

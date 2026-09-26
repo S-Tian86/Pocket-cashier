@@ -1,5 +1,5 @@
 // Resumen del dia: totales, ranking de productos, ventas por stand, caja y hora.
-import { api, loadConfig, state, money, el, toast, renderTopbar, humanDate, time } from './common.js';
+import { api, loadConfig, requireRole, state, money, el, toast, renderTopbar, humanDate, time } from './common.js';
 
 const $ = (id) => document.getElementById(id);
 let report = null;
@@ -8,6 +8,7 @@ init().catch((err) => toast('Error al cargar', { detail: err.message, type: 'bad
 
 async function init() {
   await loadConfig();
+  if (!requireRole('cashier')) return;
   renderTopbar('cierre');
   const { days } = await api('/api/days');
   const today = state.config.day;

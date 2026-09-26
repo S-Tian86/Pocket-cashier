@@ -1,5 +1,5 @@
 // Ajustes: catalogo de productos, stands, datos del negocio e impresora.
-import { api, loadConfig, state, money, el, toast, openModal, confirmDialog, renderTopbar, refreshPrinterStatus } from './common.js';
+import { api, loadConfig, requireRole, state, money, el, toast, openModal, confirmDialog, renderTopbar, refreshPrinterStatus } from './common.js';
 
 const $ = (id) => document.getElementById(id);
 let settings = null;
@@ -8,8 +8,9 @@ init().catch((err) => toast('Error al cargar', { detail: err.message, type: 'bad
 
 async function init() {
   await loadConfig();
+  if (!requireRole('cashier')) return;
   renderTopbar('admin');
-  await ensurePin();
+  if (!(await ensurePin())) return;
   renderCatalog();
   fillSettings();
   wire();
@@ -24,16 +25,25 @@ async function ensurePin() {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       settings = (await api('/api/settings')).settings;
-      return;
+      return true;
     } catch (err) {
-      if (err.status !== 401) throw err;
+      if (err.status !== 401 || err.auth !== 'pin') throw err;
+      // con codigos y sin PIN, Ajustes solo se abre en el PC de la caja: no tiene sentido pedirlo
+      if (!state.config.requiresPin) {
+        document.querySelector('main').replaceChildren(el('div', { class: 'card' }, [
+          el('h2', { text: 'Ajustes solo desde el PC de la caja' }),
+          el('p', { class: 'muted', text: 'Para abrirlos desde otro equipo, define un PIN de administrador en Ajustes > Seguridad, en el PC de la impresora.' }),
+        ]));
+        return false;
+      }
       const pin = window.prompt('PIN de administrador:');
-      if (pin === null) { location.href = '/'; return; }
+      if (pin === null) { location.href = '/'; return false; }
       localStorage.setItem('adminPin', pin);
     }
   }
   toast('PIN incorrecto', { type: 'bad' });
   location.href = '/';
+  return false;
 }
 
 function wire() {
@@ -48,6 +58,11 @@ function wire() {
   $('test-printer').addEventListener('click', testPrinter);
   $('check-printer').addEventListener('click', checkPrinter);
   $('pr-mode').addEventListener('change', togglePrinterRows);
+  $('gen-cashier').addEventListener('click', () => { $('code-cashier').value = randomCode(); });
+  $('gen-stand').addEventListener('click', () => { $('code-stand').value = randomCode(); });
+  $('save-access').addEventListener('click', saveAccess);
+  $('print-cashier').addEventListener('click', () => printAccess('cashier'));
+  $('print-stand').addEventListener('click', () => printAccess('stand'));
   $('promo-part-add').addEventListener('click', addPromoPart);
   $('promo-part-qty').addEventListener('keydown', (event) => { if (event.key === 'Enter') addPromoPart(); });
   $('promo-save').addEventListener('click', savePromo);
@@ -404,7 +419,56 @@ function fillSettings() {
   $('t-station-copies').value = tickets.stationTicketCopies ?? 1;
   $('admin-pin').value = settings?.adminPin || '';
   $('day-start').value = settings?.businessDayStartHour ?? 5;
+  $('code-cashier').value = settings?.access?.cashierCode || '';
+  $('code-stand').value = settings?.access?.standCode || '';
   togglePrinterRows();
+  loadRemote();
+}
+
+// ------------------------------------------------------------ acceso remoto
+
+// mismo alfabeto que el servidor: sin O/0 ni I/1/L, que se confunden al dictarlos
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+function randomCode(length = 6) {
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return [...bytes].map((byte) => CODE_ALPHABET[byte % CODE_ALPHABET.length]).join('');
+}
+
+async function loadRemote() {
+  try {
+    const remote = await api('/api/remote');
+    const { tunnel } = remote;
+    let text = remote.url || 'Sin direccion';
+    if (tunnel.url) text = `${tunnel.url}  (tunel activo)`;
+    else if (tunnel.error) text = `${remote.url || ''}  -  Tunel: ${tunnel.error}`;
+    else if (tunnel.active) text = 'Iniciando tunel...';
+    else text = `${remote.url}  (solo red local: para internet inicia con start-tunnel.bat)`;
+    $('remote-url').textContent = text;
+    // el tunel tarda unos segundos en dar su direccion
+    if (tunnel.active && !tunnel.url) setTimeout(loadRemote, 3000);
+  } catch (err) {
+    $('remote-url').textContent = `No se pudo consultar: ${err.message}`;
+  }
+}
+
+async function saveAccess() {
+  await saveSettings({ access: { cashierCode: $('code-cashier').value, standCode: $('code-stand').value } }, 'Codigos guardados');
+  settings = (await api('/api/settings')).settings;
+  $('code-cashier').value = settings.access?.cashierCode || '';
+  $('code-stand').value = settings.access?.standCode || '';
+}
+
+async function printAccess(role) {
+  try {
+    const result = await api('/api/access/print', { method: 'POST', body: { role } });
+    $('access-output').style.display = '';
+    $('access-output').textContent = result.text;
+    if (result.ok) toast('Acceso impreso', { type: 'ok' });
+    else toast('No se pudo imprimir', { detail: result.error, type: 'bad' });
+  } catch (err) {
+    toast('No se pudo imprimir', { detail: err.message, type: 'bad' });
+  }
 }
 
 function togglePrinterRows() {

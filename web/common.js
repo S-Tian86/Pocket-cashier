@@ -6,6 +6,8 @@ export async function api(path, { method = 'GET', body } = {}) {
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   const pin = localStorage.getItem('adminPin');
   if (pin) headers['X-Admin-Pin'] = pin;
+  const code = localStorage.getItem('accessCode');
+  if (code) headers['X-Access-Code'] = code;
 
   let response;
   try {
@@ -15,16 +17,44 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
   const data = await response.json().catch(() => ({ ok: false, error: 'Respuesta invalida del servidor' }));
   if (!response.ok || data.ok === false) {
+    // sin codigo (o lo cambiaron en Ajustes): a la pantalla de ingreso, volviendo aqui despues
+    if (data.auth === 'code') goToLogin();
     const error = new Error(data.error || `Error ${response.status}`);
     error.status = response.status;
+    error.auth = data.auth;
     throw error;
   }
   return data;
 }
 
+export function goToLogin() {
+  localStorage.removeItem('accessCode');
+  const next = location.pathname + location.search;
+  location.href = `/login.html?next=${encodeURIComponent(next)}`;
+}
+
+const LEVELS = { stand: 1, cashier: 2, admin: 3 };
+
 export async function loadConfig() {
   state.config = await api('/api/bootstrap');
   return state.config;
+}
+
+/**
+ * Deja entrar a la pantalla solo si el codigo alcanza (el servidor igual lo
+ * valida en cada accion). Un stand que abre la caja termina en su pantalla.
+ */
+export function requireRole(role) {
+  const current = state.config?.role;
+  if (current && LEVELS[current] >= LEVELS[role]) return true;
+  location.replace(current === 'stand' ? '/stand.html' : '/login.html');
+  return false;
+}
+
+export function logout() {
+  localStorage.removeItem('accessCode');
+  localStorage.removeItem('adminPin');
+  location.href = '/login.html';
 }
 
 export function money(amount) {
@@ -126,6 +156,8 @@ export function renderTopbar(current) {
     ['/cierre.html', 'Cierre', 'cierre'],
     ['/admin.html', 'Ajustes', 'admin'],
   ];
+  // con codigos, quien entro con uno puede salir (por ejemplo para prestar el celular)
+  const canLogout = state.config?.accessEnabled && localStorage.getItem('accessCode');
   host.className = 'topbar';
   host.replaceChildren(
     el('div', { class: 'brand', text: state.config?.business?.name || 'Caja' }),
@@ -141,7 +173,10 @@ export function renderTopbar(current) {
       el('span', { class: 'printer-dot', id: 'printer-dot' }),
       el('span', { id: 'printer-label', text: 'Impresora' }),
     ]),
-    el('nav', {}, nav.map(([href, label, key]) => el('a', { href, class: key === current ? 'active' : '', text: label }))),
+    el('nav', {}, [
+      ...nav.map(([href, label, key]) => el('a', { href, class: key === current ? 'active' : '', text: label })),
+      canLogout ? el('a', { href: '#', text: 'Salir', onclick: (event) => { event.preventDefault(); logout(); } }) : null,
+    ]),
   );
   refreshPrinterStatus();
 }

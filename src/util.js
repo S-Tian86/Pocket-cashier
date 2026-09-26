@@ -1,5 +1,18 @@
 // Utilidades comunes: dinero, fechas y dia comercial.
+import os from 'node:os';
+
 import * as config from './config.js';
+
+/** IPs de este PC en la red local (para entrar desde otros equipos). */
+export function localAddresses() {
+  const addresses = [];
+  for (const interfaces of Object.values(os.networkInterfaces())) {
+    for (const iface of interfaces || []) {
+      if (iface.family === 'IPv4' && !iface.internal) addresses.push(iface.address);
+    }
+  }
+  return addresses;
+}
 
 export function money(amount, { symbol = true } = {}) {
   const cur = config.get('currency', {});

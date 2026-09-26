@@ -1,6 +1,6 @@
 // Pantalla del stand: pedidos pendientes de un solo stand y marcar entregas.
 // Pensada para el celular o tablet de cada stand, conectado a la red de la caja.
-import { api, loadConfig, state, el, toast, confirmDialog, time } from './common.js';
+import { api, loadConfig, requireRole, state, el, toast, confirmDialog, time } from './common.js';
 
 const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = 'standStationId';
@@ -31,6 +31,7 @@ init().catch((err) => toast('Error al cargar', { detail: err.message, type: 'bad
 
 async function init() {
   await loadConfig();
+  if (!requireRole('stand')) return;
   $('change').addEventListener('click', changeStation);
   document.addEventListener('visibilitychange', () => {
     if (!station) return;

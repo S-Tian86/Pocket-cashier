@@ -20,6 +20,8 @@ export const DEFAULTS = {
   server: { host: '0.0.0.0', port: 8080 },
   businessDayStartHour: 5,
   adminPin: '',
+  // codigos para entrar desde internet (tunel); vacios = red local sin codigos
+  access: { cashierCode: '', standCode: '' },
   currency: { symbol: '$', decimals: 0, thousandsSep: '.', decimalSep: ',' },
   printer: {
     enabled: true,

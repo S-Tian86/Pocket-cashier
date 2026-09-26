@@ -134,6 +134,29 @@
     </div>
 
     <div class="card">
+      <h2>Acceso remoto</h2>
+      <p class="muted" style="font-size:13px;margin-top:-6px">Para que los celulares entren con sus datos moviles, sin estar en la red de la caja:
+        inicia la caja con <code>start-tunnel.bat</code>. Solo este PC necesita internet.</p>
+      <div class="field"><label>Direccion para entrar</label><div id="remote-url" class="ticket-preview" style="white-space:normal;word-break:break-all">-</div></div>
+      <div class="field-row">
+        <div class="field"><label>Codigo para cajas (cobrar)</label>
+          <div style="display:flex;gap:6px"><input id="code-cashier" placeholder="Vacio = sin codigo" style="flex:1;text-transform:uppercase"><button class="btn ghost small" id="gen-cashier">Generar</button></div>
+        </div>
+        <div class="field"><label>Codigo para stands (ver y entregar)</label>
+          <div style="display:flex;gap:6px"><input id="code-stand" placeholder="Vacio = sin codigo" style="flex:1;text-transform:uppercase"><button class="btn ghost small" id="gen-stand">Generar</button></div>
+        </div>
+      </div>
+      <div class="hint" style="margin-bottom:10px">Con codigos, este PC entra sin escribir nada. Desde otro equipo, Ajustes pide ademas el PIN de administrador (sin PIN, Ajustes queda solo en este PC).
+        Cambiar un codigo desconecta a quienes entraron con el anterior.</div>
+      <div class="row-actions">
+        <button class="btn" id="save-access">Guardar codigos</button>
+        <button class="btn ghost" id="print-cashier">Imprimir acceso cajas</button>
+        <button class="btn ghost" id="print-stand">Imprimir acceso stands</button>
+      </div>
+      <pre id="access-output" class="ticket-preview" style="display:none;margin-top:12px"></pre>
+    </div>
+
+    <div class="card">
       <h2>Seguridad</h2>
       <div class="field-row">
         <div class="field"><label>PIN para ajustes y anulaciones</label><input id="admin-pin" placeholder="Vacio = sin PIN"><div class="hint">Protege esta pagina y la anulacion de pedidos. Se guarda en este equipo para no pedirlo cada vez.</div></div>

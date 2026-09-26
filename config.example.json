@@ -11,6 +11,10 @@
   },
   "businessDayStartHour": 5,
   "adminPin": "",
+  "access": {
+    "cashierCode": "",
+    "standCode": ""
+  },
   "currency": {
     "symbol": "$",
     "decimals": 0,

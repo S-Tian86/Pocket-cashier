@@ -2,7 +2,7 @@
 import * as config from './config.js';
 import * as store from './store.js';
 import { print, checkPrinter, describePrinter } from './printer.js';
-import { buildOrderDocuments, buildClosingReport, buildTestTicket } from './tickets.js';
+import { buildOrderDocuments, buildClosingReport, buildTestTicket, buildAccessTicket } from './tickets.js';
 import { dailyReport } from './reports.js';
 
 /** Imprime los documentos de un pedido. Nunca lanza: informa el fallo. */
@@ -46,6 +46,12 @@ export async function printDailyReport(day) {
   const ticket = buildClosingReport(report);
   const result = await print(ticket.build());
   return { ok: result.ok, error: result.error, report, text: ticket.previewText() };
+}
+
+export async function printAccessTicket(options) {
+  const ticket = buildAccessTicket(options);
+  const result = await print(ticket.build());
+  return { ok: result.ok, error: result.error, text: ticket.previewText() };
 }
 
 export async function printTestPage() {

@@ -467,9 +467,11 @@ export async function registerPrint(id, { error = null } = {}) {
 }
 
 export class HttpError extends Error {
-  constructor(status, message) {
+  /** `auth` ('code' | 'pin' | 'role') le indica a la pantalla que falta para seguir. */
+  constructor(status, message, auth) {
     super(message);
     this.status = status;
+    if (auth) this.auth = auth;
   }
 }
 

@@ -247,6 +247,26 @@ export function buildClosingReport(report) {
   return ticket;
 }
 
+/** Ticket para repartir: QR que entra directo con el codigo, mas el codigo escrito por si no hay camara. */
+export function buildAccessTicket({ role, code, url }) {
+  const ticket = newTicket();
+  header(ticket);
+  ticket.sep('=');
+  ticket.align('center').bold(true).size(2, 2).line(role === 'stand' ? 'STAND' : 'CAJA').size(1, 1).bold(false);
+  ticket.line(role === 'stand' ? 'Ver y entregar pedidos' : 'Cobrar pedidos');
+  ticket.feed(1);
+  ticket.qr(`${url}/login.html#code=${code}`, { size: 5 });
+  ticket.feed(1);
+  ticket.line('Escanea con la camara');
+  ticket.line('o entra a:');
+  ticket.align('left').wrapped(url);
+  ticket.align('center').line('y escribe el codigo:');
+  ticket.bold(true).size(2, 2).line(code).size(1, 1).bold(false);
+  ticket.align('left');
+  finish(ticket);
+  return ticket;
+}
+
 export function buildTestTicket() {
   const printer = config.get('printer', {});
   const ticket = newTicket();

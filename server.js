@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 // Pocket Cashier - servidor de caja para bingos, kermeses y ferias.
-// Uso: node server.js [--port 8080] [--host 0.0.0.0]
+// Uso: node server.js [--port 8080] [--host 0.0.0.0] [--tunnel]
 import http from 'node:http';
-import os from 'node:os';
 import path from 'node:path';
 
 import * as config from './src/config.js';
@@ -11,6 +10,9 @@ import { buildRouter, handleApi } from './src/api.js';
 import { serveStatic, sendText } from './src/router.js';
 import { describePrinter } from './src/printer.js';
 import { getCatalog } from './src/store.js';
+import { localAddresses } from './src/util.js';
+import { accessEnabled, accessCodes, generateCode } from './src/access.js';
+import * as tunnel from './src/tunnel.js';
 
 const WEB_DIR = path.join(ROOT, 'web');
 
@@ -26,14 +28,31 @@ function parseArgs(argv) {
   return args;
 }
 
-function localAddresses() {
-  const addresses = [];
-  for (const interfaces of Object.values(os.networkInterfaces())) {
-    for (const iface of interfaces || []) {
-      if (iface.family === 'IPv4' && !iface.internal) addresses.push(iface.address);
-    }
-  }
-  return addresses;
+/**
+ * Con el tunel la caja queda en internet: sin codigos cualquiera con la
+ * direccion podria cobrar o cambiar precios, asi que se crean si faltan.
+ */
+function ensureAccessCodes() {
+  if (accessEnabled()) return;
+  config.save({ access: { cashierCode: generateCode(), standCode: generateCode() } });
+  console.log('\n  Se crearon codigos de acceso (se pueden cambiar en Ajustes).');
+}
+
+function startTunnel(port) {
+  ensureAccessCodes();
+  const codes = accessCodes();
+  tunnel.start(port, {
+    urlChanged: (url) => {
+      console.log([
+        '',
+        `  En internet:     ${url}`,
+        `  Codigo cajas:    ${codes.cashier || '(sin codigo)'}`,
+        `  Codigo stands:   ${codes.stand || '(sin codigo)'}`,
+        '  Imprime los accesos con QR desde Ajustes > Acceso remoto.',
+        '',
+      ].join('\n'));
+    },
+  });
 }
 
 async function main() {
@@ -88,10 +107,15 @@ async function main() {
       '',
     ];
     console.log(lines.join('\n'));
+    if (args.tunnel) {
+      console.log('  Iniciando tunel a internet...');
+      startTunnel(port);
+    }
   });
 
   const stop = () => {
     console.log('\n  Cerrando caja...');
+    tunnel.stop();
     server.close(() => process.exit(0));
     setTimeout(() => process.exit(0), 2000).unref();
   };
