@@ -122,6 +122,7 @@ export function renderTopbar(current) {
   const nav = [
     ['/', 'Caja', 'caja'],
     ['/pedidos.html', 'Pedidos', 'pedidos'],
+    ['/stand.html', 'Stand', 'stand'],
     ['/cierre.html', 'Cierre', 'cierre'],
     ['/admin.html', 'Ajustes', 'admin'],
   ];

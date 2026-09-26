@@ -106,3 +106,98 @@ test('valida las peticiones incorrectas', async () => {
   const metodo = await call('/api/report', { method: 'DELETE' });
   assert.equal(metodo.status, 405);
 });
+
+// ------------------------------------------------------------ cola del stand
+// Van al final: crean pedidos y no deben alterar el cierre probado arriba.
+
+async function stands() {
+  const { body } = await call('/api/bootstrap');
+  const [cocina, bar] = body.stations;
+  return {
+    cocina,
+    bar,
+    completo: body.products.find((product) => product.stationId === cocina.id),
+    bebida: body.products.find((product) => product.stationId === bar.id),
+  };
+}
+
+async function order(items) {
+  const { body } = await call('/api/orders', { method: 'POST', body: JSON.stringify({ items, print: false }) });
+  return body.order;
+}
+
+test('la cola del stand trae solo sus productos, sin anulados y en orden de llegada', async () => {
+  const { cocina, bar, completo, bebida } = await stands();
+  const mixto = await order([{ productId: completo.id, qty: 2 }, { productId: bebida.id, qty: 1 }]);
+  const soloBar = await order([{ productId: bebida.id, qty: 1 }]);
+  const anulado = await order([{ productId: completo.id, qty: 1 }]);
+  await call(`/api/orders/${anulado.id}/void`, { method: 'POST', body: JSON.stringify({ reason: 'test' }) });
+
+  const { status, body } = await call(`/api/stations/${cocina.id}/queue`);
+  assert.equal(status, 200);
+  assert.equal(body.ok, true);
+  assert.deepEqual(body.station, { id: cocina.id, name: cocina.name });
+  const ids = body.pending.map((entry) => entry.id);
+  assert.ok(ids.includes(mixto.id));
+  assert.ok(!ids.includes(soloBar.id), 'un pedido sin productos del stand no aparece');
+  assert.ok(!ids.includes(anulado.id), 'los anulados no aparecen');
+
+  const entry = body.pending.find((item) => item.id === mixto.id);
+  assert.equal(entry.code, mixto.code);
+  assert.deepEqual(entry.items, [{ name: completo.name, qty: 2, note: '' }]);
+  assert.equal(entry.deliveredAt, undefined);
+
+  const created = body.pending.map((item) => item.createdAt);
+  assert.deepEqual(created, [...created].sort(), 'los pendientes van del mas antiguo al mas nuevo');
+  assert.deepEqual(body.delivered, []);
+
+  const barQueue = await call(`/api/stations/${bar.id}/queue`);
+  assert.ok(barQueue.body.pending.some((item) => item.id === soloBar.id));
+});
+
+test('entregar mueve el pedido a entregados solo en ese stand y se puede deshacer', async () => {
+  const { cocina, bar, completo, bebida } = await stands();
+  const mixto = await order([{ productId: completo.id, qty: 1 }, { productId: bebida.id, qty: 1 }]);
+
+  await call(`/api/orders/${mixto.id}/deliver`, { method: 'POST', body: JSON.stringify({ stationId: cocina.id, delivered: true }) });
+  const cocinaQueue = (await call(`/api/stations/${cocina.id}/queue`)).body;
+  assert.ok(!cocinaQueue.pending.some((item) => item.id === mixto.id));
+  assert.equal(cocinaQueue.delivered[0].id, mixto.id);
+  assert.match(cocinaQueue.delivered[0].deliveredAt, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+
+  const barQueue = (await call(`/api/stations/${bar.id}/queue`)).body;
+  assert.ok(barQueue.pending.some((item) => item.id === mixto.id), 'el bar aun no lo entrega');
+
+  await call(`/api/orders/${mixto.id}/deliver`, { method: 'POST', body: JSON.stringify({ stationId: cocina.id, delivered: false }) });
+  const again = (await call(`/api/stations/${cocina.id}/queue?limit=1`)).body;
+  assert.ok(again.pending.some((item) => item.id === mixto.id));
+  assert.ok(again.delivered.length <= 1);
+});
+
+test('la cola "none" junta los productos sin stand', async () => {
+  const { completo } = await stands();
+  const { body: created } = await call('/api/products', {
+    method: 'POST',
+    body: JSON.stringify({ name: 'Rifa', price: 1000, stationId: null }),
+  });
+  const pedido = await order([{ productId: created.product.id, qty: 3 }, { productId: completo.id, qty: 1 }]);
+
+  const { status, body } = await call('/api/stations/none/queue');
+  assert.equal(status, 200);
+  assert.deepEqual(body.station, { id: null, name: 'RETIRO' });
+  const entry = body.pending.find((item) => item.id === pedido.id);
+  assert.deepEqual(entry.items, [{ name: 'Rifa', qty: 3, note: '' }]);
+
+  await call(`/api/orders/${pedido.id}/deliver`, { method: 'POST', body: JSON.stringify({ stationId: null, delivered: true }) });
+  const after = (await call('/api/stations/none/queue')).body;
+  assert.equal(after.delivered[0].id, pedido.id);
+});
+
+test('un stand inexistente responde 404', async () => {
+  const missing = await call('/api/stations/9999/queue');
+  assert.equal(missing.status, 404);
+  assert.equal(missing.body.ok, false);
+
+  const invalid = await call('/api/stations/abc/queue');
+  assert.equal(invalid.status, 404);
+});

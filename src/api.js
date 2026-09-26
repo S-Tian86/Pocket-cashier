@@ -5,6 +5,7 @@ import { Router, sendJson, readJsonBody } from './router.js';
 import * as service from './service.js';
 import { describePrinter } from './printer.js';
 import { dailyReport, availableDays } from './reports.js';
+import { stationQueue } from './queue.js';
 import { businessDay, toInt, clean } from './util.js';
 import { PAYMENT_LABELS } from './tickets.js';
 
@@ -73,6 +74,15 @@ export function buildRouter() {
     requirePin(ctx.req);
     return { ok: true, ...(await store.deleteStation(ctx.params.id)) };
   });
+
+  // Pantalla del stand: sin PIN, la usan los celulares de cada stand
+  router.get('/api/stations/:id/queue', async (ctx) => ({
+    ok: true,
+    ...(await stationQueue(ctx.params.id, {
+      day: ctx.query.get('day') || businessDay(),
+      limit: ctx.query.get('limit') ?? undefined,
+    })),
+  }));
 
   // ---------------------------------------------------------------- pedidos
   router.post('/api/orders', async (ctx) => {
