@@ -195,6 +195,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .qty { min-width: 28px; text-align: center; font-weight: 700; color: var(--ink); }
 .line .total { font-weight: 700; }
 .link-btn { background: none; border: none; color: var(--danger); cursor: pointer; padding: 2px 4px; font-size: 13px; }
+.link-btn.neutral { color: var(--brand); }
+.line .note { grid-column: 1 / -1; font-size: 14px; font-style: italic; color: var(--warn); }
 
 .cart footer { border-top: 1px solid var(--line); padding: 14px; }
 .total-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
@@ -321,6 +323,7 @@ tr.void td { color: #96a0ae; text-decoration: line-through; }
   .stepper .badge { font-size: 16px; min-width: 30px; }
   .line .qty-btn { width: 44px; height: 44px; font-size: 20px; }
   .line .qty { font-size: 18px; min-width: 34px; }
+  .line .link-btn { min-height: 44px; padding: 0 8px; font-size: 14px; }
 
   .mobile-bar {
     display: flex; align-items: center; gap: 10px;

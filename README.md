@@ -71,8 +71,11 @@ El indicador verde/rojo de la barra superior muestra si la impresora está respo
 2. Una vez agregado, la tarjeta muestra **`−  2  +`** para subir o bajar la cantidad ahí mismo,
    sin bajar al carro y sin abrir el teclado del celular.
 3. Atajo de teclado: escribir la cantidad (`3`) y tocar el producto la carga de una vez.
-4. Botón **Cobrar** (o `F2`): elegir medio de pago, escribir con cuánto paga y confirmar.
-5. Se imprimen la boleta y los tickets de retiro, y la pantalla muestra el **vuelto** en grande.
+4. En el carro, **Nota** en cada producto agrega una indicación (`sin mayo`, `1 sin tomate`) que
+   sale bajo ese producto en la boleta, en el ticket del stand y en la pantalla Stand. La
+   *Nota del pedido* de la ventana de cobro es para todo el pedido (`para llevar`).
+5. Botón **Cobrar** (o `F2`): elegir medio de pago, escribir con cuánto paga y confirmar.
+6. Se imprimen la boleta y los tickets de retiro, y la pantalla muestra el **vuelto** en grande.
 
 En celular y tablet hay una **barra fija abajo** con el total y el botón Cobrar siempre a la
 vista; tocando el total se salta al detalle del pedido. Los botones `−` / `+` miden 44 px

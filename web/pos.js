@@ -1,7 +1,7 @@
 // Pantalla de caja: catalogo, carro y cobro.
 import { api, loadConfig, state, money, parseAmount, el, toast, openModal, renderTopbar, getCashier, refreshPrinterStatus } from './common.js';
 
-const cart = new Map(); // productId -> { product, qty }
+const cart = new Map(); // productId -> { product, qty, note }
 let category = 'TODOS';
 
 const $ = (id) => document.getElementById(id);
@@ -122,7 +122,7 @@ function pendingQty() {
 }
 
 function addToCart(product, qty = pendingQty()) {
-  const entry = cart.get(product.id) || { product, qty: 0 };
+  const entry = cart.get(product.id) || { product, qty: 0, note: '' };
   entry.product = product;
   entry.qty += qty;
   cart.set(product.id, entry);
@@ -142,6 +142,31 @@ function setQty(productId, qty) {
   renderProducts();
 }
 
+/** Nota de una linea (ej: "sin mayo"): sale bajo el producto en la boleta y en el ticket del stand. */
+function editNote(productId) {
+  const entry = cart.get(productId);
+  if (!entry) return;
+  // 40 es el largo que guarda el servidor por producto
+  const input = el('input', { placeholder: 'Ej: sin mayo, 1 sin tomate', maxlength: 40, value: entry.note || '' });
+  const save = () => {
+    entry.note = input.value.trim();
+    saveCart();
+    renderCart();
+    close();
+  };
+  const { close } = openModal([
+    el('h2', { text: `Nota para ${entry.product.name}` }),
+    el('p', { class: 'sub', text: `Aplica a las ${entry.qty} unidades. Si solo es para algunas, indicalo (ej: 1 sin mayo).` }),
+    el('div', { class: 'field' }, [input]),
+    el('div', { class: 'modal-actions' }, [
+      el('button', { class: 'btn ghost', onclick: () => close() }, ['Cancelar']),
+      el('button', { class: 'btn', onclick: save }, ['Guardar']),
+    ]),
+  ]);
+  input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); save(); } });
+  setTimeout(() => input.focus(), 30);
+}
+
 function cartTotal() {
   return [...cart.values()].reduce((sum, entry) => sum + entry.product.price * entry.qty, 0);
 }
@@ -158,12 +183,14 @@ function renderCart() {
     items.replaceChildren(...[...cart.values()].map((entry) => el('div', { class: 'line' }, [
       el('span', { class: 'name', text: entry.product.name }),
       el('span', { class: 'total', text: money(entry.product.price * entry.qty) }),
+      entry.note ? el('span', { class: 'note', text: entry.note }) : null,
       el('span', { class: 'sub' }, [
         el('button', { class: 'qty-btn', title: 'Quitar uno', onclick: () => setQty(entry.product.id, entry.qty - 1) }, ['-']),
         el('span', { class: 'qty', text: String(entry.qty) }),
         el('button', { class: 'qty-btn', title: 'Agregar uno', onclick: () => setQty(entry.product.id, entry.qty + 1) }, ['+']),
         el('span', { text: `${money(entry.product.price)} c/u` }),
         el('span', { class: 'spacer' }),
+        el('button', { class: 'link-btn neutral', onclick: () => editNote(entry.product.id) }, [entry.note ? 'Editar nota' : 'Nota']),
         el('button', { class: 'link-btn', onclick: () => setQty(entry.product.id, 0) }, ['Quitar']),
       ]),
     ])));
@@ -189,7 +216,7 @@ function clearCart({ confirm = false } = {}) {
 }
 
 function saveCart() {
-  const data = [...cart.values()].map((entry) => ({ id: entry.product.id, qty: entry.qty }));
+  const data = [...cart.values()].map((entry) => ({ id: entry.product.id, qty: entry.qty, note: entry.note || '' }));
   localStorage.setItem('cart', JSON.stringify(data));
 }
 
@@ -197,7 +224,7 @@ function restoreCart() {
   try {
     for (const row of JSON.parse(localStorage.getItem('cart') || '[]')) {
       const product = state.config.products.find((item) => item.id === row.id && item.active !== false);
-      if (product) cart.set(product.id, { product, qty: row.qty });
+      if (product) cart.set(product.id, { product, qty: row.qty, note: row.note || '' });
     }
   } catch { /* carro invalido: se ignora */ }
 }
@@ -245,7 +272,8 @@ function openChargeDialog() {
   ]);
 
   const customerInput = el('input', { placeholder: 'Opcional (para llamar el pedido)', maxlength: 24 });
-  const noteInput = el('input', { placeholder: 'Opcional (ej: sin mayo)', maxlength: 80 });
+  // nota de todo el pedido; lo de cada producto va en su propia nota desde el carro
+  const noteInput = el('input', { placeholder: 'Opcional (ej: para llevar)', maxlength: 80 });
 
   const methodButtons = state.config.paymentMethods.map((item) => el('button', {
     class: `choice ${item.key === method ? 'active' : ''}`,
@@ -277,7 +305,7 @@ function openChargeDialog() {
     cashArea,
     el('div', { class: 'field-row' }, [
       el('div', { class: 'field' }, [el('label', { text: 'Cliente' }), customerInput]),
-      el('div', { class: 'field' }, [el('label', { text: 'Nota' }), noteInput]),
+      el('div', { class: 'field' }, [el('label', { text: 'Nota del pedido' }), noteInput]),
     ]),
     el('div', { class: 'modal-actions' }, [
       el('button', { class: 'btn ghost', onclick: () => close() }, ['Cancelar (Esc)']),
@@ -304,7 +332,7 @@ function openChargeDialog() {
     confirmButton.textContent = 'Imprimiendo...';
     try {
       const payload = {
-        items: [...cart.values()].map((entry) => ({ productId: entry.product.id, qty: entry.qty })),
+        items: [...cart.values()].map((entry) => ({ productId: entry.product.id, qty: entry.qty, note: entry.note || '' })),
         paymentMethod: method,
         amountPaid: paid,
         cashier: getCashier(),
