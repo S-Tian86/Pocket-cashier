@@ -15,9 +15,12 @@ async function init() {
   wire();
 }
 
-/** Si hay PIN configurado y el guardado no sirve, lo pide una vez. */
+/**
+ * Carga la configuracion completa; si hay PIN y el guardado no sirve, lo pide.
+ * Se carga siempre, haya PIN o no: el formulario de la impresora se llena con esto y,
+ * si quedara vacio, al guardar borraria el comando, la IP y el dispositivo.
+ */
 async function ensurePin() {
-  if (!state.config.requiresPin) return;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       settings = (await api('/api/settings')).settings;
