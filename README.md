@@ -96,6 +96,26 @@ Lista del día con búsqueda por número, cliente o producto. Desde ahí se pued
 - **Ver** el ticket tal como sale impreso, con la opción de imprimirlo desde el navegador
   (respaldo si la impresora térmica falla).
 
+**Pantalla Stand**
+
+Para el celular o tablet de cada stand, conectado a la misma red (o al hotspot) que la caja.
+Cada stand ve **solo sus pedidos** y marca lo que entrega.
+
+1. Abrir `http://<ip-de-la-caja>:8080/stand.html` y tocar el stand (COCINA, BAR...). Queda
+   guardado en ese equipo; se cambia con **Cambiar stand** arriba. También está en la
+   pestaña **Stand** de la caja.
+2. Para dejar un enlace fijo por stand: `http://<ip>:8080/stand.html?station=<id>` (el `id`
+   del stand, o `none` para los productos sin stand, que salen como *Retiro*).
+3. Cada pedido pendiente es una tarjeta con el **número tal como sale en el ticket** (`0024`),
+   solo los productos de ese stand (`2x Completo`, con su nota debajo) y cuánto lleva esperando.
+   Los que pasan de 10 minutos se marcan en naranjo; los nuevos se destacan y el celular vibra.
+4. Botón **Entregado**: la tarjeta desaparece al tiro y abajo aparece **Deshacer** por 5
+   segundos, por si fue un error.
+5. **Últimos entregados** (abajo, plegado): tocar uno lo devuelve a pendientes.
+
+Se actualiza sola cada 3 segundos y el punto de arriba indica si hay conexión con la caja.
+Las entregas son las mismas que se marcan en **Pedidos**: se ven en ambas pantallas.
+
 **Pantalla Cierre**
 
 Totales del día, ranking de productos, ventas por stand, por caja, por hora y por medio de pago.
@@ -184,7 +204,7 @@ Copiar la carpeta `data/` es respaldo suficiente. Son archivos de texto: se pued
 ## 7. Desarrollo
 
 ```sh
-npm test        # 24 pruebas: tickets, ESC/POS, correlativos, cierre y API
+npm test        # 33 pruebas: tickets, ESC/POS, correlativos, cierre, cola del stand y API
 node server.js  # levanta la caja
 ```
 
@@ -196,12 +216,12 @@ src/escpos.js      generador de comandos ESC/POS + vista previa en texto
 src/printer.js     envío a la impresora (red, dispositivo, comando, archivo)
 src/tickets.js     diseño de boleta, tickets de retiro y cierre
 src/reports.js     resumen del día
+src/queue.js       cola de retiro de un stand (GET /api/stations/:id/queue)
 src/api.js         endpoints JSON
-web/               interfaz (caja, pedidos, cierre, ajustes)
+web/               interfaz (caja, pedidos, stand, cierre, ajustes)
 ```
 
 ## 8. Ideas para más adelante
 
 - Marcar el retiro escaneando el código de barras del ticket con un lector.
-- Pantalla para el stand, con la cola de pedidos pendientes.
 - Propinas, descuentos o combos.

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stand</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="stand">
+  <header class="stand-bar">
+    <div>
+      <div class="stand-name" id="stand-name">Stand</div>
+      <div class="stand-meta" id="stand-meta" hidden>
+        <span class="stand-count" id="pending-count"></span>
+        <span class="conn" id="conn"><span class="conn-dot"></span><span id="conn-label">Conectando</span></span>
+      </div>
+    </div>
+    <button class="stand-change" id="change" hidden>Cambiar stand</button>
+  </header>
+  <main class="stand-main">
+    <section id="picker" hidden>
+      <p class="stand-hint">Elige el stand de este equipo. Queda guardado en este celular.</p>
+      <div id="picker-list" class="stand-picker"></div>
+    </section>
+    <section id="queue" hidden>
+      <div id="pending" class="stand-cards"></div>
+      <div id="empty" class="stand-empty" hidden>
+        <strong>Sin pedidos pendientes</strong>
+        <span>Los pedidos nuevos apareceran aqui solos.</span>
+      </div>
+      <details class="stand-delivered">
+        <summary>Ultimos entregados (<span id="delivered-count">0</span>)</summary>
+        <p class="stand-hint">Toca un pedido para volverlo a pendiente.</p>
+        <div id="delivered"></div>
+      </details>
+    </section>
+  </main>
+  <div id="undo-bar" class="undo-bar" hidden>
+    <span id="undo-text"></span>
+    <button class="btn ghost small" id="undo">Deshacer</button>
+  </div>
+  <script type="module" src="/stand.js"></script>
+</body>
+</html>
