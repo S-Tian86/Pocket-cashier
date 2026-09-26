@@ -36,6 +36,14 @@ test('incluye inicializacion, corte y codigo de barras', () => {
   assert.ok(bytes.includes(Buffer.from([0x1d, 0x56, 0x42, 0x00]))); // corte parcial
 });
 
+test('desactiva el modo chino solo cuando se pide', () => {
+  const plain = new Ticket({ width: 32, codepage: 2 }).build();
+  assert.deepEqual([...plain.subarray(0, 5)], [0x1b, 0x40, 0x1b, 0x74, 2]); // ESC @, ESC t 2
+  const noChinese = new Ticket({ width: 32, codepage: 2, cancelChineseMode: true }).build();
+  // FS . debe ir antes de ESC t: en modo chino la impresora ignora el cambio de codepage
+  assert.deepEqual([...noChinese.subarray(0, 7)], [0x1b, 0x40, 0x1c, 0x2e, 0x1b, 0x74, 2]);
+});
+
 test('el codigo de barras descarta caracteres no soportados', () => {
   const ticket = new Ticket({ width: 32 });
   ticket.barcode('año-42');

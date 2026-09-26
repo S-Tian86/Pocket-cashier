@@ -214,6 +214,7 @@ function fillSettings() {
   $('pr-feed').value = printer.feedLines ?? 3;
   $('pr-cut').checked = printer.cut !== false;
   $('pr-drawer').checked = Boolean(printer.openDrawer);
+  $('pr-no-chinese').checked = Boolean(printer.cancelChineseMode);
   $('t-receipt').checked = tickets.printReceipt !== false;
   $('t-stations').checked = tickets.printStationTickets !== false;
   $('t-receipt-copies').value = tickets.receiptCopies ?? 1;
@@ -272,6 +273,7 @@ function savePrinter() {
       feedLines: Number($('pr-feed').value) || 0,
       cut: $('pr-cut').checked,
       openDrawer: $('pr-drawer').checked,
+      cancelChineseMode: $('pr-no-chinese').checked,
     },
     tickets: {
       printReceipt: $('t-receipt').checked,
