@@ -51,6 +51,12 @@ function footer(ticket, order) {
   return ticket;
 }
 
+/** Cierre de cada documento: corte con guillotina o, si no tiene, una linea para cortar con tijera. */
+function finish(ticket) {
+  const printer = config.get('printer', {});
+  return ticket.cut({ feedLines: Number(printer.feedLines ?? 3), paperCut: printer.cut !== false });
+}
+
 /** Agrupa los productos por estacion: una estacion = un ticket de retiro. Las promos van abiertas. */
 export function groupByStation(order) {
   const groups = new Map();
@@ -108,7 +114,7 @@ export function buildReceipt(order, { copyLabel = '' } = {}) {
   }
 
   footer(ticket, order);
-  ticket.cut({ feedLines: Number(config.get('printer.feedLines', 3)) });
+  finish(ticket);
   return ticket;
 }
 
@@ -139,7 +145,7 @@ export function buildStationTicket(order, group, index, totalTickets) {
   ticket.line(`Caja: ${order.cashier || '-'}`);
 
   footer(ticket, order);
-  ticket.cut({ feedLines: Number(config.get('printer.feedLines', 3)) });
+  finish(ticket);
   return ticket;
 }
 
@@ -237,7 +243,7 @@ export function buildClosingReport(report) {
 
   ticket.feed(1).align('center').line('Firma: ______________');
   ticket.align('left');
-  ticket.cut({ feedLines: Number(config.get('printer.feedLines', 3)) });
+  finish(ticket);
   return ticket;
 }
 
@@ -258,6 +264,6 @@ export function buildTestTicket() {
   ticket.line('1234567890'.repeat(4).slice(0, Number(printer.charsPerLine) || 32));
   ticket.align('center').code('PRUEBA1', config.get('printer.barcode', 'code39'));
   ticket.align('left');
-  ticket.cut({ feedLines: Number(printer.feedLines || 3) });
+  finish(ticket);
   return ticket;
 }

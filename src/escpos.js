@@ -159,10 +159,15 @@ export class Ticket {
     return this;
   }
 
-  cut({ feedLines = 3 } = {}) {
+  /** Sin guillotina (`paperCut: false`) marca con una linea punteada donde cortar con tijera. */
+  cut({ feedLines = 3, paperCut = true } = {}) {
     this.reset();
+    if (!paperCut) {
+      this.feed(1);
+      this.line(`8<${' -'.repeat(this.usableWidth)}`.slice(0, this.usableWidth));
+    }
     this.feed(feedLines);
-    return this.raw([GS, 0x56, 0x42, 0x00]); // corte parcial
+    return paperCut ? this.raw([GS, 0x56, 0x42, 0x00]) : this; // corte parcial
   }
 
   drawer() {
