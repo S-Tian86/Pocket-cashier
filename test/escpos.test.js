@@ -44,6 +44,14 @@ test('desactiva el modo chino solo cuando se pide', () => {
   assert.deepEqual([...noChinese.subarray(0, 7)], [0x1b, 0x40, 0x1c, 0x2e, 0x1b, 0x74, 2]);
 });
 
+test('sin guillotina no manda el corte e imprime una linea para la tijera', () => {
+  const ticket = new Ticket({ width: 32 });
+  ticket.line('hola').cut({ feedLines: 2, paperCut: false });
+  assert.ok(!ticket.build().includes(Buffer.from([0x1d, 0x56]))); // sin GS V
+  const guide = ticket.lines.find((line) => line.text.startsWith('8<'));
+  assert.equal(guide.text.length, 32);
+});
+
 test('el codigo de barras descarta caracteres no soportados', () => {
   const ticket = new Ticket({ width: 32 });
   ticket.barcode('año-42');

@@ -146,6 +146,14 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%;
 }
 .product.in-cart { outline: 2px solid var(--brand); }
+.product.promo { border-left-color: var(--warn); }
+.product.sold-out { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.product.sold-out:active { transform: none; }
+.product .includes, .line .includes { font-size: 12px; color: var(--ink-soft); line-height: 1.25; }
+.line .includes { grid-column: 1 / -1; }
+.product .stock { font-size: 12px; font-weight: 600; color: var(--ok); }
+.product .stock.low { color: var(--danger); }
+.qty-btn:disabled { opacity: .35; cursor: not-allowed; }
 .product .badge {
   background: var(--brand); color: #fff; border-radius: 999px;
   padding: 1px 8px; font-size: 12px; font-weight: 700;

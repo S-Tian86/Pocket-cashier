@@ -28,6 +28,8 @@ async function init() {
   $('bar-detail').addEventListener('click', () => document.querySelector('.cart').scrollIntoView({ behavior: 'smooth', block: 'start' }));
   document.addEventListener('keydown', onGlobalKey);
   setInterval(refreshPrinterStatus, 60000);
+  // otras cajas tambien venden: el stock visible no puede quedar congelado
+  setInterval(refreshCatalog, 15000);
   $('search').focus();
 }
 
@@ -44,8 +46,75 @@ function categories() {
   return ['TODOS', ...[...found].sort()];
 }
 
+function productById(id) {
+  return state.config.products.find((product) => product.id === id);
+}
+
+function isPromo(product) {
+  return Array.isArray(product.components) && product.components.length > 0;
+}
+
 function stationName(product) {
   return state.config.stations.find((station) => station.id === product.stationId)?.name || 'RETIRO';
+}
+
+/** Stands donde se retira un producto: una promo puede repartirse en varios. */
+function stationNames(product) {
+  if (!isPromo(product)) return [stationName(product)];
+  return product.components.map((part) => productById(part.productId)).filter(Boolean).map(stationName);
+}
+
+function describeComponents(product) {
+  return product.components.map((part) => `${part.qty} ${productById(part.productId)?.name || '?'}`).join(' + ');
+}
+
+/** Unidades de cada producto que ya ocupa el carro (una promo, por lo que incluye). */
+function cartUsage() {
+  const usage = new Map();
+  const add = (id, qty) => usage.set(id, (usage.get(id) || 0) + qty);
+  for (const entry of cart.values()) {
+    if (isPromo(entry.product)) {
+      for (const part of entry.product.components) add(part.productId, part.qty * entry.qty);
+    } else {
+      add(entry.product.id, entry.qty);
+    }
+  }
+  return usage;
+}
+
+/**
+ * Cuantas unidades mas se pueden agregar al carro; null = sin control de stock.
+ * Es solo una ayuda para no cobrar lo que no hay: el servidor vuelve a validar.
+ */
+function available(product, usage = cartUsage()) {
+  if (!isPromo(product)) {
+    if (product.stock === null || product.stock === undefined) return null;
+    return Math.max(product.stock - (usage.get(product.id) || 0), 0);
+  }
+  let left = null;
+  for (const part of product.components) {
+    const base = productById(part.productId);
+    if (!base || base.stock === null || base.stock === undefined) continue;
+    const fits = Math.floor(Math.max(base.stock - (usage.get(base.id) || 0), 0) / part.qty);
+    left = left === null ? fits : Math.min(left, fits);
+  }
+  return left;
+}
+
+async function refreshCatalog() {
+  try {
+    const { products, stations } = await api('/api/catalog');
+    state.config.products = products;
+    state.config.stations = stations;
+    for (const [id, entry] of cart) {
+      const fresh = productById(id);
+      if (fresh && fresh.active !== false) entry.product = fresh;
+      else cart.delete(id);
+    }
+    saveCart();
+    renderCart();
+    renderProducts();
+  } catch { /* sin conexion: se reintenta en el proximo ciclo */ }
 }
 
 function renderTabs() {
@@ -79,16 +148,27 @@ function renderProducts() {
     grid.replaceChildren(el('p', { class: 'muted', text: 'No hay productos que coincidan. Agregalos en Ajustes.' }));
     return;
   }
+  const usage = cartUsage();
   grid.replaceChildren(...products.map((product) => {
     const inCart = cart.get(product.id);
+    const left = available(product, usage);
+    // agotado y fuera del carro: no se puede tocar. Si ya esta en el carro se deja para poder bajar la cantidad
+    const soldOut = left === 0 && !inCart;
+    const promo = isPromo(product);
     return el('div', {
-      class: `product ${inCart ? 'in-cart' : ''}`,
+      class: `product ${inCart ? 'in-cart' : ''} ${soldOut ? 'sold-out' : ''} ${promo ? 'promo' : ''}`,
       role: 'button',
-      tabindex: '0',
-      onclick: () => addToCart(product),
-      onkeydown: (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); addToCart(product); } },
+      tabindex: soldOut ? '-1' : '0',
+      'aria-disabled': soldOut ? 'true' : null,
+      onclick: () => { if (!soldOut) addToCart(product); },
+      onkeydown: (event) => { if (!soldOut && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); addToCart(product); } },
     }, [
       el('span', { class: 'name', text: product.name }),
+      promo ? el('span', { class: 'includes', text: describeComponents(product) }) : null,
+      left === null ? null : el('span', {
+        class: `stock ${left <= 5 ? 'low' : ''}`,
+        text: soldOut ? 'Agotado' : `Quedan ${left}`,
+      }),
       el('span', { class: 'meta' }, [
         el('span', { class: 'price', text: money(product.price) }),
         inCart
@@ -96,20 +176,21 @@ function renderProducts() {
           ? el('span', { class: 'stepper' }, [
             stepButton('-', 'Quitar uno', () => setQty(product.id, inCart.qty - 1)),
             el('span', { class: 'badge', text: `${inCart.qty}` }),
-            stepButton('+', 'Agregar uno', () => setQty(product.id, inCart.qty + 1)),
+            stepButton('+', 'Agregar uno', () => setQty(product.id, inCart.qty + 1), left === 0),
           ])
-          : el('span', { class: 'station', text: stationName(product) }),
+          : el('span', { class: 'station', text: promo ? 'PROMO' : stationName(product) }),
       ]),
     ]);
   }));
 }
 
 /** Boton +/- dentro de la tarjeta: no debe disparar el click de la tarjeta. */
-function stepButton(label, title, action) {
+function stepButton(label, title, action, disabled = false) {
   return el('button', {
     class: 'qty-btn',
     title,
     'aria-label': title,
+    disabled,
     onclick: (event) => { event.stopPropagation(); action(); },
   }, [label]);
 }
@@ -122,6 +203,12 @@ function pendingQty() {
 }
 
 function addToCart(product, qty = pendingQty()) {
+  const left = available(product);
+  if (left !== null && qty > left) {
+    if (left === 0) { toast(`No queda stock de ${product.name}`, { type: 'bad' }); return; }
+    toast(`Solo quedan ${left} de ${product.name}`, { type: 'bad' });
+    qty = left;
+  }
   const entry = cart.get(product.id) || { product, qty: 0, note: '' };
   entry.product = product;
   entry.qty += qty;
@@ -135,6 +222,11 @@ function addToCart(product, qty = pendingQty()) {
 function setQty(productId, qty) {
   const entry = cart.get(productId);
   if (!entry) return;
+  const left = available(entry.product);
+  if (qty > entry.qty && left !== null && qty - entry.qty > left) {
+    toast(left === 0 ? `No queda mas stock de ${entry.product.name}` : `Solo quedan ${left} de ${entry.product.name}`, { type: 'bad' });
+    return;
+  }
   if (qty <= 0) cart.delete(productId);
   else entry.qty = qty;
   saveCart();
@@ -180,14 +272,21 @@ function renderCart() {
   if (!cart.size) {
     items.replaceChildren(el('p', { class: 'empty', text: 'Toca un producto para agregarlo al pedido.' }));
   } else {
+    const usage = cartUsage();
     items.replaceChildren(...[...cart.values()].map((entry) => el('div', { class: 'line' }, [
       el('span', { class: 'name', text: entry.product.name }),
       el('span', { class: 'total', text: money(entry.product.price * entry.qty) }),
+      isPromo(entry.product) ? el('span', { class: 'includes', text: describeComponents(entry.product) }) : null,
       entry.note ? el('span', { class: 'note', text: entry.note }) : null,
       el('span', { class: 'sub' }, [
         el('button', { class: 'qty-btn', title: 'Quitar uno', onclick: () => setQty(entry.product.id, entry.qty - 1) }, ['-']),
         el('span', { class: 'qty', text: String(entry.qty) }),
-        el('button', { class: 'qty-btn', title: 'Agregar uno', onclick: () => setQty(entry.product.id, entry.qty + 1) }, ['+']),
+        el('button', {
+          class: 'qty-btn',
+          title: 'Agregar uno',
+          disabled: available(entry.product, usage) === 0,
+          onclick: () => setQty(entry.product.id, entry.qty + 1),
+        }, ['+']),
         el('span', { text: `${money(entry.product.price)} c/u` }),
         el('span', { class: 'spacer' }),
         el('button', { class: 'link-btn neutral', onclick: () => editNote(entry.product.id) }, [entry.note ? 'Editar nota' : 'Nota']),
@@ -344,17 +443,20 @@ function openChargeDialog() {
       clearCart();
       showResult(result.order, result.print);
       refreshPrinterStatus();
+      refreshCatalog();
     } catch (err) {
       paying = true;
       confirmButton.disabled = false;
       confirmButton.textContent = 'Cobrar e imprimir';
       toast('No se pudo registrar el pedido', { detail: err.message, type: 'bad' });
+      // 409 = otra caja vendio lo ultimo mientras tanto: se muestra el stock real
+      if (err.status === 409) refreshCatalog();
     }
   }
 }
 
 function describeStations() {
-  const names = new Set([...cart.values()].map((entry) => stationName(entry.product)));
+  const names = new Set([...cart.values()].flatMap((entry) => stationNames(entry.product)));
   return names.size > 1 ? `${names.size} tickets de retiro: ${[...names].join(', ')}` : `Retiro en ${[...names][0]}`;
 }
 

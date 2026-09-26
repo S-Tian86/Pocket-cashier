@@ -57,6 +57,11 @@ export function buildRouter() {
     requirePin(ctx.req);
     return { ok: true, product: await store.saveProduct({ ...ctx.body, id: ctx.params.id }) };
   });
+  router.post('/api/products/:id/stock', async (ctx) => {
+    requirePin(ctx.req);
+    const { set, add } = ctx.body;
+    return { ok: true, product: await store.adjustStock(ctx.params.id, set !== undefined ? { set } : { add }) };
+  });
   router.delete('/api/products/:id', async (ctx) => {
     requirePin(ctx.req);
     return { ok: true, ...(await store.deleteProduct(ctx.params.id)) };

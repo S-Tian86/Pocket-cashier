@@ -33,12 +33,15 @@ async function load() {
   render();
 }
 
+/** Stands del pedido: una promo se reparte en los stands de lo que incluye. */
 function stationsOf(order) {
   const groups = new Map();
   for (const item of order.items) {
-    const key = String(item.stationId ?? 'null');
-    if (!groups.has(key)) groups.set(key, { key, stationId: item.stationId ?? null, name: item.stationName, items: [] });
-    groups.get(key).items.push(item);
+    const parts = item.components?.length ? item.components : [item];
+    for (const part of parts) {
+      const key = String(part.stationId ?? 'null');
+      if (!groups.has(key)) groups.set(key, { key, stationId: part.stationId ?? null, name: part.stationName || 'RETIRO' });
+    }
   }
   return [...groups.values()];
 }

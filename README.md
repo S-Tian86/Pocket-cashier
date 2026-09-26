@@ -92,6 +92,32 @@ vista; tocando el total se salta al detalle del pedido. Los botones `−` / `+` 
 El nombre de la caja (`Caja 1`, `Caja 2`...) se escribe arriba y queda guardado en ese equipo;
 así el cierre muestra cuánto vendió cada una.
 
+**Stock**
+
+Cada producto puede llevar stock (en **Ajustes → Productos**). Vacío = se vende sin límite.
+
+- La tarjeta muestra **Quedan N** (en rojo desde 5), descontando lo que ya está en el carro.
+  Sin stock queda gris con **Agotado** y no se puede agregar.
+- El stock lo valida el servidor al cobrar: si dos cajas venden la última unidad a la vez,
+  la segunda recibe "Solo quedan N" y no se cobra nada. Las cajas se actualizan cada 15 s.
+- **Reponer** suma unidades a lo que quede (o descuenta mermas con un número negativo), sin
+  pisar lo que se vende mientras tanto. Escribir en la casilla fija la cantidad exacta.
+- **Anular** un pedido devuelve al stock lo que ese pedido descontó.
+
+**Promos y packs**
+
+Se crean en **Ajustes → Promos y packs**: nombre, precio y los productos que incluye
+(`3 Sopaipilla`, o `1 Completo + 1 Bebida lata`).
+
+- En la caja son **un producto más** con su propio precio: no se aplican solas. Se puede
+  vender 3 sopaipillas sueltas de $400 y además una promo 3x$1.000: $2.200.
+- Descuentan el stock de lo que incluyen, y muestran cuántas quedan según ese stock.
+- En la boleta sale la promo con su detalle; cada producto sale en el **ticket de su stand**
+  (el completo en COCINA y la bebida en BAR), con el nombre de la promo para cuadrar.
+- En el cierre, la promo cuenta como un producto; en *ventas por stand* su precio se reparte
+  según el precio normal de lo que incluye.
+- No se puede borrar un producto que está en una promo (primero hay que quitarlo de ella).
+
 **Pantalla Pedidos**
 
 Lista del día con búsqueda por número, cliente o producto. Desde ahí se puede:
@@ -211,7 +237,7 @@ Copiar la carpeta `data/` es respaldo suficiente. Son archivos de texto: se pued
 ## 7. Desarrollo
 
 ```sh
-npm test        # 34 pruebas: tickets, ESC/POS, correlativos, cierre, cola del stand y API
+npm test        # 41 pruebas: tickets, ESC/POS, correlativos, cierre, stock, promos, cola del stand y API
 node server.js  # levanta la caja
 ```
 
@@ -224,6 +250,7 @@ src/printer.js     envío a la impresora (red, dispositivo, comando, archivo)
 src/tickets.js     diseño de boleta, tickets de retiro y cierre
 src/reports.js     resumen del día
 src/queue.js       cola de retiro de un stand (GET /api/stations/:id/queue)
+src/lines.js       lo que entrega cada stand (abre las promos) y lo que descuenta del stock
 src/api.js         endpoints JSON
 web/               interfaz (caja, pedidos, stand, cierre, ajustes)
 ```
