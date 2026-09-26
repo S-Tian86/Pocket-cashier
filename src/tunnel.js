@@ -2,8 +2,13 @@
 // ni dominio, para que los celulares entren con sus datos moviles y solo el PC
 // de la impresora necesite internet. La direccion cambia cada vez que se inicia.
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
 import https from 'node:https';
+import path from 'node:path';
 
+import { paths } from './store.js';
+
+const LOG_PATH = path.join(paths.DATA_DIR, 'cloudflared.log');
 const URL_PATTERN = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/;
 const RETRY_MS = 5000;
 const CHECK_MS = 60 * 1000;
@@ -87,12 +92,17 @@ export function start(port, { binary = process.env.CLOUDFLARED || 'cloudflared',
 function launch(port, binary) {
   state.url = '';
   state.error = '';
-  child = spawn(binary, ['tunnel', '--no-autoupdate', '--url', `http://localhost:${port}`], {
+  // http2 va por TCP: QUIC (UDP, el predeterminado) se corta seguido en redes
+  // de celular, y un quick tunnel que pierde su conexion queda dado de baja
+  child = spawn(binary, ['tunnel', '--no-autoupdate', '--protocol', 'http2', '--url', `http://localhost:${port}`], {
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   });
 
-  // cloudflared escribe su registro (incluida la direccion) por stderr
+  // cloudflared escribe su registro (incluida la direccion) por stderr; se guarda para diagnosticar cortes
+  const log = fs.createWriteStream(LOG_PATH, { flags: 'a' });
+  log.write(`\n--- ${new Date().toISOString()} inicio del tunel ---\n`);
+  child.stderr.pipe(log);
   const scan = (chunk) => {
     const found = URL_PATTERN.exec(String(chunk));
     if (found && found[0] !== state.url) {

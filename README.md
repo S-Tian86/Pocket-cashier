@@ -65,6 +65,8 @@ Con códigos hay tres roles:
   (prueba su dirección cada minuto) y a los ~3 minutos abre un túnel nuevo. La dirección nueva
   aparece en la consola y en Ajustes → Acceso remoto; hay que reimprimir los accesos.
 - Todo sigue pasando por el PC: si se apaga o pierde internet, los celulares no pueden cobrar.
+- El túnel usa HTTP/2 (TCP): en redes de celular QUIC suele no conectar. Si algo falla, el
+  registro de cloudflared queda en `data/cloudflared.log`.
 
 ## 2. Configurar la impresora
 
