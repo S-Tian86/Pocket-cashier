@@ -2,6 +2,7 @@
 // ni dominio, para que los celulares entren con sus datos moviles y solo el PC
 // de la impresora necesite internet. La direccion cambia cada vez que se inicia.
 import { spawn } from 'node:child_process';
+import https from 'node:https';
 
 const URL_PATTERN = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/;
 const RETRY_MS = 5000;
@@ -16,6 +17,33 @@ let checkTimer = null;
 let checkFailures = 0;
 
 /**
+ * Resuelve con DNS sobre HTTPS y no con el del sistema: el DNS del celular que
+ * comparte internet guarda un "no existe" si se pregunto por la direccion antes
+ * de que Cloudflare la publicara, y el tunel pareceria caido estando bien.
+ */
+async function resolveViaHttps(host) {
+  const response = await fetch(`https://cloudflare-dns.com/dns-query?name=${host}&type=A`, {
+    headers: { accept: 'application/dns-json' },
+    signal: AbortSignal.timeout(15000),
+  });
+  const data = await response.json();
+  return (data.Answer || []).filter((answer) => answer.type === 1).map((answer) => answer.data);
+}
+
+/** Pide /api/access a la IP resuelta, presentandose con el nombre del tunel. */
+function probe(ip, host) {
+  return new Promise((resolve, reject) => {
+    const request = https.request({ host: ip, servername: host, path: '/api/access', headers: { host }, timeout: 15000 }, (response) => {
+      response.resume();
+      resolve(response.statusCode);
+    });
+    request.on('timeout', () => request.destroy(new Error('sin respuesta')));
+    request.on('error', reject);
+    request.end();
+  });
+}
+
+/**
  * Si el PC pierde internet un buen rato, Cloudflare da de baja la direccion
  * pero cloudflared sigue vivo: los celulares quedan sin caja y nadie se entera.
  * Se prueba la propia direccion y, tras varios fallos seguidos, se reinicia el
@@ -24,8 +52,11 @@ let checkFailures = 0;
 async function checkHealth() {
   if (!state.url || !child) return;
   try {
-    const response = await fetch(`${state.url}/api/access`, { signal: AbortSignal.timeout(15000) });
-    if (response.status >= 500) throw new Error(`HTTP ${response.status}`);
+    const host = new URL(state.url).hostname;
+    const [ip] = await resolveViaHttps(host);
+    if (!ip) throw new Error('la direccion ya no existe');
+    const status = await probe(ip, host);
+    if (status >= 500) throw new Error(`HTTP ${status}`);
     checkFailures = 0;
     if (state.error) state.error = '';
   } catch (err) {
