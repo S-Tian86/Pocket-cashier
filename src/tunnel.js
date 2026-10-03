@@ -9,7 +9,8 @@ import path from 'node:path';
 import { paths } from './store.js';
 
 const LOG_PATH = path.join(paths.DATA_DIR, 'cloudflared.log');
-const URL_PATTERN = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/;
+// api.trycloudflare.com es donde cloudflared pide la direccion: aparece en sus errores y no es la caja
+const URL_PATTERN = /https:\/\/(?!api\.)[a-z0-9-]+\.trycloudflare\.com/;
 const RETRY_MS = 5000;
 const CHECK_MS = 60 * 1000;
 const MAX_CHECK_FAILURES = 3;
