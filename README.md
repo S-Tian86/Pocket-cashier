@@ -1,7 +1,7 @@
 # Pocket Cashier
 
 Caja rápida para bingos, kermeses, ferias y beneficios: se toma el pedido en pantalla,
-se cobra y la impresora térmica de 58 mm saca **una boleta para el cliente** y **un ticket
+se cobra y la impresora térmica de 58 mm saca **un ticket de venta para el cliente** y **un ticket
 de retiro por cada stand** donde tenga que ir a buscar la comida.
 
 Al final del día entrega el **cierre de caja** con todo lo vendido.
@@ -72,10 +72,10 @@ El indicador verde/rojo de la barra superior muestra si la impresora está respo
    sin bajar al carro y sin abrir el teclado del celular.
 3. Atajo de teclado: escribir la cantidad (`3`) y tocar el producto la carga de una vez.
 4. En el carro, **Nota** en cada producto agrega una indicación (`sin mayo`, `1 sin tomate`) que
-   sale bajo ese producto en la boleta, en el ticket del stand y en la pantalla Stand. La
+   sale bajo ese producto en el ticket de venta, en el del stand y en la pantalla Stand. La
    *Nota del pedido* de la ventana de cobro es para todo el pedido (`para llevar`).
 5. Botón **Cobrar** (o `F2`): elegir medio de pago, escribir con cuánto paga y confirmar.
-6. Se imprimen la boleta y los tickets de retiro, y la pantalla muestra el **vuelto** en grande.
+6. Se imprimen el ticket de venta y los de retiro, y la pantalla muestra el **vuelto** en grande.
 
 En celular y tablet hay una **barra fija abajo** con el total y el botón Cobrar siempre a la
 vista; tocando el total se salta al detalle del pedido. Los botones `−` / `+` miden 44 px
@@ -92,17 +92,17 @@ vista; tocando el total se salta al detalle del pedido. Los botones `−` / `+` 
 El nombre de la caja (`Caja 1`, `Caja 2`...) se escribe arriba y queda guardado en ese equipo;
 así el cierre muestra cuánto vendió cada una.
 
-**Stands: color, boleta y ticket**
+**Stands: color y qué tickets imprimen**
 
 En **Ajustes → Stands de retiro** cada stand tiene:
 
 - **Color**: pinta suave el fondo de sus productos en caja (y su línea en el carro), para ver de
   un vistazo de qué stand es cada cosa. Los stands nuevos traen uno; una promo toma el color
   solo si todo lo que incluye sale del mismo stand.
-- **Boleta** y **Ticket**: desmarcados, lo de ese stand se cobra y suma en el cierre, pero no
+- **Ticket venta** y **Ticket retiro**: desmarcados, lo de ese stand se cobra y suma en el cierre, pero no
   imprime. Pensado para lo que solo se registra para la cuadratura, como las entradas que
   controla portería. Un pedido solo de entradas no imprime nada; si se mezcla con comida, la
-  boleta sale completa (para que el total cuadre con lo pagado) y solo hay ticket para la
+  ticket de venta sale completo (para que el total cuadre con lo pagado) y solo hay ticket para la
   cocina. Desde **Pedidos** se puede reimprimir igual a mano.
 
 **Stock**
@@ -125,7 +125,7 @@ Se crean en **Ajustes → Promos y packs**: nombre, precio y los productos que i
 - En la caja son **un producto más** con su propio precio: no se aplican solas. Se puede
   vender 3 sopaipillas sueltas de $400 y además una promo 3x$1.000: $2.200.
 - Descuentan el stock de lo que incluyen, y muestran cuántas quedan según ese stock.
-- En la boleta sale la promo con su detalle; cada producto sale en el **ticket de su stand**
+- En el ticket de venta sale la promo con su detalle; cada producto sale en el **ticket de su stand**
   (el completo en COCINA y la bebida en BAR), con el nombre de la promo para cuadrar.
 - En el cierre, la promo cuenta como un producto; en *ventas por stand* su precio se reparte
   según el precio normal de lo que incluye.
@@ -135,7 +135,7 @@ Se crean en **Ajustes → Promos y packs**: nombre, precio y los productos que i
 
 Lista del día con búsqueda por número, cliente o producto. Desde ahí se puede:
 
-- **Reimprimir** todo, solo la boleta o el ticket de un stand (si se atascó el papel).
+- **Reimprimir** todo, solo el ticket de venta o el de un stand (si se atascó el papel).
 - **Anular** un pedido cobrado por error: deja de sumar en el cierre pero queda registrado.
 - **Marcar entregado** cada stand, tocando su etiqueta (queda verde). Sirve para que el stand
   lleve el control de lo que ya despachó.
@@ -177,7 +177,7 @@ Se puede imprimir en la térmica, imprimir la página completa o descargar un CS
        Stand de comidas
 ================================
         PEDIDO 0042               ← correlativo del día, grande
-        BOLETA DE VENTA
+        TICKET DE VENTA
 --------------------------------
 Fecha           07-09-2026 20:15
 Caja                      Caja 1
@@ -227,7 +227,7 @@ barras o QR, por si más adelante se quiere marcar la entrega escaneando el tick
 - `business`: nombre, subtítulo, línea extra y mensaje final del ticket.
 - `printer`: modo de conexión, ancho (`32` para 58 mm, `42`/`48` para 80 mm), juego de
   caracteres, corte de papel, cajón de dinero y tipo de código.
-- `tickets`: si se imprime la boleta, los tickets de retiro y cuántas copias de cada uno.
+- `tickets`: si se imprime el ticket de venta, los de retiro y cuántas copias de cada uno.
 - `adminPin`: PIN opcional para entrar a Ajustes y anular pedidos.
 - `businessDayStartHour`: hora en que empieza el día comercial.
 - `currency`: símbolo y separadores (por defecto pesos chilenos, sin decimales).
@@ -260,7 +260,7 @@ src/config.js      configuración
 src/store.js       persistencia en JSON (catálogo y pedidos del día)
 src/escpos.js      generador de comandos ESC/POS + vista previa en texto
 src/printer.js     envío a la impresora (red, dispositivo, comando, archivo)
-src/tickets.js     diseño de boleta, tickets de retiro y cierre
+src/tickets.js     diseño de tickets de venta y de retiro, y del cierre
 src/reports.js     resumen del día
 src/queue.js       cola de retiro de un stand (GET /api/stations/:id/queue)
 src/lines.js       lo que entrega cada stand (abre las promos) y lo que descuenta del stock
