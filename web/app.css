@@ -149,6 +149,15 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .product.promo { border-left-color: var(--warn); }
 .product.sold-out { opacity: .45; cursor: not-allowed; box-shadow: none; }
 .product.sold-out:active { transform: none; }
+/* Color del stand: el fondo suave basta para reconocerlo, el borde lo marca fuerte */
+.product.tinted {
+  border-left-color: var(--station);
+  background: color-mix(in srgb, var(--station) 13%, var(--surface));
+}
+.line.tinted {
+  box-shadow: inset 4px 0 0 var(--station);
+  background: color-mix(in srgb, var(--station) 9%, var(--surface));
+}
 .product .includes, .line .includes { font-size: 12px; color: var(--ink-soft); line-height: 1.25; }
 .line .includes { grid-column: 1 / -1; }
 .product .stock { font-size: 12px; font-weight: 600; color: var(--ok); }
