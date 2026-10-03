@@ -188,21 +188,20 @@ RETIRA EN 2 STANDS:
 ```
 
 Y en seguida, un ticket por stand con el mismo número de pedido, precedido por la inicial del
-stand (si dos stands empiezan con la misma letra, el nombre arriba del ticket los distingue):
+stand (si dos stands empiezan con la misma letra, el nombre arriba del ticket los distingue).
+Es compacto porque sale uno por stand en cada pedido: no lleva el pie del negocio, y el
+"1 de 2" solo aparece cuando el pedido se retira en más de un stand:
 
 ```
-         COCINA
-       TICKET DE RETIRO
-================================
          C-0042
-         Ticket 1 de 2
-             20:15
+--------------------------------
+Retira en: COCINA
 --------------------------------
 2 x Completo
 --------------------------------
 Cliente: Juan
-Caja: Caja 1
-        ||| 0042 |||
+Caja: Caja 1 - 20:15 - 1 de 2
+        ||| 0042 |||             ← solo si hay código de barras o QR
 ```
 
 El número de pedido es correlativo por día (`0001`, `0002`, ...) y va también como código de

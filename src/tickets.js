@@ -41,11 +41,16 @@ function header(ticket) {
   return ticket;
 }
 
-function footer(ticket, order) {
+/** `message: false` omite el pie del negocio ("Gracias por su compra"): solo va en la boleta. */
+function footer(ticket, order, { message = true } = {}) {
   const business = config.get('business', {});
   const barcodeMode = config.get('printer.barcode', 'code39');
-  ticket.reset().feed(1).align('center');
-  if (business.footer) ticket.wrapped(business.footer);
+  const footerText = message ? business.footer : '';
+  const hasCode = Boolean(order) && barcodeMode !== 'none';
+  ticket.reset();
+  if (!footerText && !hasCode) return ticket;
+  ticket.feed(1).align('center');
+  if (footerText) ticket.wrapped(footerText);
   if (order) ticket.code(order.code, barcodeMode);
   ticket.align('left');
   return ticket;
@@ -130,16 +135,14 @@ export function pickupCode(order, group) {
 }
 
 export function buildStationTicket(order, group, index, totalTickets) {
+  // compacto a proposito: sale uno por stand en cada pedido y es el que mas papel gasta
   const ticket = newTicket();
   ticket.align('center');
-  ticket.size(2, 2).bold(true).wrapped(group.stationName).bold(false).size(1, 1);
-  ticket.line('TICKET DE RETIRO');
-  ticket.sep('=');
   ticket.size(2, 2).bold(true).line(pickupCode(order, group)).bold(false).size(1, 1);
-  if (totalTickets > 1) ticket.line(`Ticket ${index + 1} de ${totalTickets}`);
-  ticket.line(humanTime(order.createdAt));
   if (order.status === 'void') ticket.bold(true).line('*** ANULADO ***').bold(false);
   ticket.align('left').sep();
+  ticket.spans([{ text: 'Retira en: ' }, { text: group.stationName, scaleH: 2, bold: true }]);
+  ticket.sep();
 
   for (const item of group.items) {
     ticket.size(1, 2);
@@ -153,9 +156,11 @@ export function buildStationTicket(order, group, index, totalTickets) {
   ticket.sep();
   if (order.customer) ticket.wrapped(`Cliente: ${order.customer}`);
   if (order.note) ticket.wrapped(`Nota: ${order.note}`);
-  ticket.line(`Caja: ${order.cashier || '-'}`);
+  const info = [`Caja: ${order.cashier || '-'}`, humanTime(order.createdAt)];
+  if (totalTickets > 1) info.push(`${index + 1} de ${totalTickets}`);
+  ticket.wrapped(info.join(' - '));
 
-  footer(ticket, order);
+  footer(ticket, order, { message: false });
   finish(ticket);
   return ticket;
 }
