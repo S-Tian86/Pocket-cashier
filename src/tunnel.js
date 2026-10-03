@@ -14,6 +14,7 @@ const URL_PATTERN = /https:\/\/(?!api\.)[a-z0-9-]+\.trycloudflare\.com/;
 const RETRY_MS = 5000;
 const CHECK_MS = 60 * 1000;
 const MAX_CHECK_FAILURES = 3;
+const MAX_SOFT_FAILURES = 10;
 
 const state = { active: false, url: '', error: '', startedAt: '' };
 let child = null;
@@ -21,6 +22,7 @@ let stopping = false;
 let onUrl = () => {};
 let checkTimer = null;
 let checkFailures = 0;
+let softFailures = 0;
 
 /**
  * Resuelve con DNS sobre HTTPS y no con el del sistema: el DNS del celular que
@@ -57,20 +59,34 @@ function probe(ip, host) {
  */
 async function checkHealth() {
   if (!state.url || !child) return;
+  const host = new URL(state.url).hostname;
+  let ips;
   try {
-    const host = new URL(state.url).hostname;
-    const [ip] = await resolveViaHttps(host);
-    if (!ip) throw new Error('la direccion ya no existe');
-    const status = await probe(ip, host);
+    ips = await resolveViaHttps(host);
+  } catch (err) {
+    // sin internet no se puede saber nada, y reiniciar garantiza perder la direccion:
+    // cloudflared solo reconecta y la conserva cuando vuelve la red
+    state.error = `Sin internet para comprobar el tunel: ${err.cause?.code || err.message}`;
+    return;
+  }
+  try {
+    if (!ips.length) throw Object.assign(new Error('la direccion ya no existe'), { gone: true });
+    const status = await probe(ips[0], host);
     if (status >= 500) throw new Error(`HTTP ${status}`);
     checkFailures = 0;
+    softFailures = 0;
     if (state.error) state.error = '';
   } catch (err) {
-    checkFailures += 1;
-    state.error = `La direccion no responde (${checkFailures}/${MAX_CHECK_FAILURES}): ${err.cause?.code || err.message}`;
-    if (checkFailures >= MAX_CHECK_FAILURES) {
+    // sin registro DNS la direccion se perdio y no vuelve: hay que pedir otra. Un 530 con
+    // registro suele ser cloudflared reconectando tras un corte: se le da mas margen
+    if (err.gone) checkFailures += 1;
+    else softFailures += 1;
+    const [count, max] = err.gone ? [checkFailures, MAX_CHECK_FAILURES] : [softFailures, MAX_SOFT_FAILURES];
+    state.error = `La direccion no responde (${count}/${max}): ${err.cause?.code || err.message}`;
+    if (count >= max) {
       console.error(`  [tunel] ${state.url} dejo de responder: se reinicia el tunel con una direccion nueva`);
       checkFailures = 0;
+      softFailures = 0;
       child?.kill(); // el handler de 'exit' lo vuelve a lanzar
     }
   }
