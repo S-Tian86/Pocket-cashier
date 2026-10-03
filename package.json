@@ -1,7 +1,7 @@
 {
   "name": "pocket-cashier",
   "version": "1.0.0",
-  "description": "Caja rapida con impresion de boleta y tickets de retiro en impresora termica de 58mm",
+  "description": "Caja rapida con impresion de tickets de venta y de retiro en impresora termica de 58mm",
   "type": "module",
   "main": "server.js",
   "engines": { "node": ">=18" },

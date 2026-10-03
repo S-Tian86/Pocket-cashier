@@ -125,8 +125,8 @@ async function reprint(order) {
     el('h2', { text: `Reimprimir pedido N\u00b0 ${order.code}` }),
     el('p', { class: 'sub', text: 'Elige que documento volver a imprimir.' }),
     el('div', { class: 'modal-actions', style: 'flex-direction:column' }, [
-      el('button', { class: 'btn ok block', onclick: () => run('all') }, ['Todo (boleta + retiros)']),
-      el('button', { class: 'btn block', onclick: () => run('receipt') }, ['Solo la boleta']),
+      el('button', { class: 'btn ok block', onclick: () => run('all') }, ['Todo (venta + retiros)']),
+      el('button', { class: 'btn block', onclick: () => run('receipt') }, ['Solo el ticket de venta']),
       ...groups.map((group) => el('button', {
         class: 'btn ghost block',
         onclick: () => run(`station:${group.key}`),

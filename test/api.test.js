@@ -58,7 +58,7 @@ test('entrega el catalogo inicial y la configuracion publica', async () => {
   assert.ok(body.paymentMethods.some((method) => method.key === 'efectivo'));
 });
 
-test('cobra un pedido e imprime boleta y tickets de retiro', async () => {
+test('cobra un pedido e imprime ticket de venta y tickets de retiro', async () => {
   const { body: bootstrap } = await call('/api/bootstrap');
   const cocina = bootstrap.stations[0];
   const bar = bootstrap.stations[1];

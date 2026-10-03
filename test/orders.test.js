@@ -53,7 +53,7 @@ test('rechaza pedidos vacios o con productos inexistentes', async () => {
   await assert.rejects(() => store.createOrder({ items: [{ productId: 99999, qty: 1 }] }), /no existe/);
 });
 
-test('un pedido con dos stands genera boleta mas un ticket por stand', async () => {
+test('un pedido con dos stands genera ticket de venta mas uno de retiro por stand', async () => {
   const { completo, bebida } = await catalogIds();
   const order = await store.createOrder({
     items: [{ productId: completo.id, qty: 2 }, { productId: bebida.id, qty: 1 }],
@@ -65,7 +65,7 @@ test('un pedido con dos stands genera boleta mas un ticket por stand', async () 
   assert.deepEqual(documents.map((doc) => doc.kind), ['receipt', 'station', 'station']);
 
   const receipt = documents[0].ticket.previewText();
-  assert.match(receipt, /BOLETA DE VENTA/);
+  assert.match(receipt, /TICKET DE VENTA/);
   assert.match(receipt, /PEDIDO 0*\d+/);
   assert.match(receipt, /TOTAL/);
   assert.match(receipt, /RETIRA EN 2 STANDS/);
@@ -247,7 +247,7 @@ test('los precios quedan congelados en el pedido aunque cambie el catalogo', asy
   await store.saveProduct({ ...completo, price: originalPrice }); // deja el catalogo como estaba
 });
 
-test('un stand sin boleta ni ticket (entradas) no imprime pero suma en el cierre', async () => {
+test('un stand sin ticket de venta ni de retiro (entradas) no imprime pero suma en el cierre', async () => {
   const { completo } = await catalogIds();
   const station = await store.saveStation({ name: 'ENTRADAS' });
   assert.match(station.color, /^#[0-9a-f]{6}$/); // los stands nuevos traen color
@@ -263,7 +263,7 @@ test('un stand sin boleta ni ticket (entradas) no imprime pero suma en el cierre
   const documents = buildOrderDocuments(mixto);
   assert.deepEqual(documents.map((doc) => doc.kind), ['receipt', 'station']);
   const receipt = documents[0].ticket.previewText();
-  assert.match(receipt, /Entrada/); // la boleta sale completa para cuadrar con lo pagado
+  assert.match(receipt, /Entrada/); // el ticket de venta sale completo para cuadrar con lo pagado
   assert.match(receipt, /RETIRA EN:\n 1\. COCINA/);
   assert.doesNotMatch(documents[1].ticket.previewText(), /1 de/);
 
