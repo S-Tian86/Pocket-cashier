@@ -131,6 +131,29 @@ export class Ticket {
     return this;
   }
 
+  /**
+   * Una sola linea con tramos de distinto tamano ("Retira en: COCINA"), para no
+   * gastar una linea por cada estilo. Si no cabe en el ancho, cada tramo va en su linea.
+   */
+  spans(parts) {
+    const fits = parts.reduce((sum, part) => sum + String(part.text).length * (part.scaleW || 1), 0) <= this.width;
+    const previous = { ...this.state };
+    if (!fits) {
+      for (const part of parts) {
+        this.size(part.scaleW || 1, part.scaleH || 1).bold(Boolean(part.bold)).wrapped(String(part.text).trim());
+      }
+      return this.size(previous.scaleW, previous.scaleH).bold(previous.bold);
+    }
+    for (const part of parts) {
+      this.size(part.scaleW || 1, part.scaleH || 1).bold(Boolean(part.bold));
+      this.raw(encodeText(String(part.text), this.encoding));
+    }
+    this.raw([0x0a]);
+    const scaleH = Math.max(...parts.map((part) => part.scaleH || 1));
+    this.lines.push({ text: parts.map((part) => part.text).join(''), align: this.state.align, bold: false, scaleW: 1, scaleH });
+    return this.size(previous.scaleW, previous.scaleH).bold(previous.bold);
+  }
+
   /** Escribe respetando el ancho del papel, cortando por palabras. */
   wrapped(text, { indent = '' } = {}) {
     const width = this.usableWidth - indent.length;

@@ -85,7 +85,7 @@ test('cobra un pedido e imprime boleta y tickets de retiro', async () => {
   const spool = fs.readFileSync(path.join(dir, 'spool.bin'));
   assert.ok(spool.length > 100);
   assert.ok(spool.includes(Buffer.from('BINGO API')));
-  assert.ok(spool.includes(Buffer.from('TICKET DE RETIRO')));
+  assert.ok(spool.includes(Buffer.from('Retira en: ')));
 });
 
 test('el cierre suma lo cobrado', async () => {
