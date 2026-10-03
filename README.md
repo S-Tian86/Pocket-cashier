@@ -124,6 +124,19 @@ vista; tocando el total se salta al detalle del pedido. Los botones `−` / `+` 
 El nombre de la caja (`Caja 1`, `Caja 2`...) se escribe arriba y queda guardado en ese equipo;
 así el cierre muestra cuánto vendió cada una.
 
+**Stands: color, boleta y ticket**
+
+En **Ajustes → Stands de retiro** cada stand tiene:
+
+- **Color**: pinta suave el fondo de sus productos en caja (y su línea en el carro), para ver de
+  un vistazo de qué stand es cada cosa. Los stands nuevos traen uno; una promo toma el color
+  solo si todo lo que incluye sale del mismo stand.
+- **Boleta** y **Ticket**: desmarcados, lo de ese stand se cobra y suma en el cierre, pero no
+  imprime. Pensado para lo que solo se registra para la cuadratura, como las entradas que
+  controla portería. Un pedido solo de entradas no imprime nada; si se mezcla con comida, la
+  boleta sale completa (para que el total cuadre con lo pagado) y solo hay ticket para la
+  cocina. Desde **Pedidos** se puede reimprimir igual a mano.
+
 **Stock**
 
 Cada producto puede llevar stock (en **Ajustes → Productos**). Vacío = se vende sin límite.

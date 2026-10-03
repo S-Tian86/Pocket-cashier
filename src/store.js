@@ -121,6 +121,15 @@ async function updateCatalog(mutator) {
   });
 }
 
+// colores suaves y distintos entre si para que en caja se reconozca el stand de un vistazo
+export const STATION_COLORS = ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00897b', '#d81b60', '#6d4c41'];
+
+function parseColor(value) {
+  const color = String(value ?? '').trim().toLowerCase();
+  if (color && !/^#[0-9a-f]{6}$/.test(color)) throw new HttpError(400, 'El color debe tener el formato #rrggbb');
+  return color;
+}
+
 export async function saveStation(input) {
   return updateCatalog((catalog) => {
     const name = clean(input.name, 24).toUpperCase();
@@ -128,12 +137,23 @@ export async function saveStation(input) {
     let station = catalog.stations.find((s) => s.id === toInt(input.id, 0));
     if (!station) {
       catalog.seq.station += 1;
-      station = { id: catalog.seq.station, name, sort: catalog.stations.length, active: true };
+      station = {
+        id: catalog.seq.station,
+        name,
+        sort: catalog.stations.length,
+        active: true,
+        color: STATION_COLORS[(catalog.seq.station - 1) % STATION_COLORS.length],
+        printReceipt: true,
+        printTicket: true,
+      };
       catalog.stations.push(station);
     }
     station.name = name;
     if (input.sort !== undefined) station.sort = toInt(input.sort, station.sort);
     if (input.active !== undefined) station.active = Boolean(input.active);
+    if (input.color !== undefined) station.color = parseColor(input.color);
+    if (input.printReceipt !== undefined) station.printReceipt = Boolean(input.printReceipt);
+    if (input.printTicket !== undefined) station.printTicket = Boolean(input.printTicket);
     return station;
   });
 }
@@ -364,7 +384,7 @@ export async function createOrder(input) {
         const base = catalog.products.find((p) => p.id === part.productId);
         if (!base) throw new HttpError(400, `La promo ${product.name} incluye un producto que ya no existe`);
         const station = stationOf(base);
-        return {
+        const component = {
           productId: base.id,
           name: base.name,
           qty: part.qty,
@@ -372,11 +392,18 @@ export async function createOrder(input) {
           stationId: station ? station.id : null,
           stationName: station ? station.name : 'RETIRO',
         };
+        if (station?.printTicket === false) component.noTicket = true;
+        if (station?.printReceipt === false) component.noReceipt = true;
+        return component;
       });
+      if (item.components.every((component) => component.noReceipt)) item.noReceipt = true;
     } else {
       const station = stationOf(product);
       item.stationId = station ? station.id : null;
       item.stationName = station ? station.name : 'RETIRO';
+      // se congela como el nombre: una reimpresion respeta lo que valia al cobrar
+      if (station?.printTicket === false) item.noTicket = true;
+      if (station?.printReceipt === false) item.noReceipt = true;
     }
     items.push(item);
   }

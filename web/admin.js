@@ -115,11 +115,20 @@ function renderCatalog() {
     const count = products.filter((product) => product.stationId === station.id).length;
     return el('tr', {}, [
       el('td', {}, [el('input', {
+        type: 'color',
+        value: station.color || '#9aa5b5',
+        title: 'Color con que se pinta en caja',
+        style: 'width:44px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer',
+        onchange: (event) => saveStation({ ...station, color: event.target.value }),
+      })]),
+      el('td', {}, [el('input', {
         value: station.name,
         style: 'width:100%',
         onchange: (event) => saveStation({ ...station, name: event.target.value }),
       })]),
       el('td', { text: `${count} productos` }),
+      el('td', {}, [stationCheck(station, 'printReceipt', 'Boleta')]),
+      el('td', {}, [stationCheck(station, 'printTicket', 'Ticket')]),
       el('td', {}, [el('button', {
         class: `tag ${station.active === false ? 'bad' : 'ok'}`,
         style: 'cursor:pointer;border:none',
@@ -128,6 +137,18 @@ function renderCatalog() {
       el('td', {}, [el('button', { class: 'btn danger small', onclick: () => removeStation(station) }, ['Borrar'])]),
     ]);
   }));
+}
+
+/** Boleta / Ticket por stand: ej. las entradas se cobran para la cuadratura pero no imprimen nada. */
+function stationCheck(station, field, label) {
+  return el('label', { style: 'display:flex;gap:6px;align-items:center;cursor:pointer;white-space:nowrap' }, [
+    el('input', {
+      type: 'checkbox',
+      checked: station[field] !== false,
+      onchange: (event) => saveStation({ ...station, [field]: event.target.checked }),
+    }),
+    label,
+  ]);
 }
 
 function editable(product, field, type) {

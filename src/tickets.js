@@ -68,11 +68,19 @@ export function groupByStation(order) {
   for (const line of pickupLines(order)) {
     const key = String(line.stationId ?? 'null');
     if (!groups.has(key)) {
-      groups.set(key, { stationId: line.stationId ?? null, stationName: line.stationName || 'RETIRO', items: [] });
+      groups.set(key, { stationId: line.stationId ?? null, stationName: line.stationName || 'RETIRO', noTicket: line.noTicket, items: [] });
     }
     groups.get(key).items.push(line);
   }
   return [...groups.values()];
+}
+
+/**
+ * Stands que llevan ticket de retiro. Los que no (ej: entradas, que solo se
+ * cobran para la cuadratura) siguen en el cierre pero no gastan papel.
+ */
+export function ticketGroups(order) {
+  return groupByStation(order).filter((group) => !group.noTicket);
 }
 
 export function buildReceipt(order, { copyLabel = '' } = {}) {
@@ -105,7 +113,7 @@ export function buildReceipt(order, { copyLabel = '' } = {}) {
   if (order.change > 0) ticket.cols('Vuelto', money(order.change));
   ticket.cols('Articulos', String(order.items.reduce((sum, item) => sum + item.qty, 0)));
 
-  const groups = groupByStation(order);
+  const groups = ticketGroups(order);
   if (groups.length) {
     ticket.sep();
     ticket.line(groups.length > 1 ? `RETIRA EN ${groups.length} STANDS:` : 'RETIRA EN:');
@@ -172,9 +180,12 @@ export function buildStationTicket(order, group, index, totalTickets) {
 export function buildOrderDocuments(order, { what = 'all' } = {}) {
   const tickets = config.get('tickets', {});
   const documents = [];
-  const groups = groupByStation(order);
+  const groups = ticketGroups(order);
 
-  const wantsReceipt = what === 'all' ? tickets.printReceipt !== false : what === 'receipt';
+  // sin boleta si todo es de stands que no la llevan (ej: solo entradas); si se mezcla,
+  // la boleta sale completa para que el total cuadre con lo pagado
+  const receiptNeeded = order.items.some((item) => !item.noReceipt);
+  const wantsReceipt = what === 'all' ? tickets.printReceipt !== false && receiptNeeded : what === 'receipt';
   const wantsStations = what === 'all' ? tickets.printStationTickets !== false : what === 'stations' || what.startsWith('station:');
 
   if (wantsReceipt) {
@@ -192,14 +203,17 @@ export function buildOrderDocuments(order, { what = 'all' } = {}) {
   if (wantsStations) {
     const only = what.startsWith('station:') ? what.slice('station:'.length) : null;
     const copies = only ? 1 : Math.max(1, Number(tickets.stationTicketCopies) || 1);
-    groups.forEach((group, index) => {
-      if (only !== null && String(group.stationId ?? 'null') !== only) return;
+    // pedido a mano desde Pedidos: se imprime aunque el stand no lleve ticket
+    const selected = only === null ? groups : groupByStation(order).filter((group) => String(group.stationId ?? 'null') === only);
+    selected.forEach((group) => {
+      const found = groups.indexOf(groups.find((g) => g.stationId === group.stationId));
+      const [index, total] = found === -1 ? [0, 1] : [found, groups.length];
       for (let copy = 0; copy < copies; copy += 1) {
         documents.push({
           kind: 'station',
           stationId: group.stationId,
-          title: `Retiro ${group.stationName} (${index + 1}/${groups.length})`,
-          ticket: buildStationTicket(order, group, index, groups.length),
+          title: `Retiro ${group.stationName} (${index + 1}/${total})`,
+          ticket: buildStationTicket(order, group, index, total),
         });
       }
     });

@@ -55,14 +55,36 @@ function isPromo(product) {
   return Array.isArray(product.components) && product.components.length > 0;
 }
 
-function stationName(product) {
-  return state.config.stations.find((station) => station.id === product.stationId)?.name || 'RETIRO';
+function stationOf(product) {
+  return state.config.stations.find((station) => station.id === product.stationId) || null;
 }
 
-/** Stands donde se retira un producto: una promo puede repartirse en varios. */
+function stationName(product) {
+  return stationOf(product)?.name || 'RETIRO';
+}
+
+/** Stands de un producto: una promo puede repartirse en varios. */
+function stationsOfProduct(product) {
+  if (!isPromo(product)) return [stationOf(product)];
+  return product.components.map((part) => productById(part.productId)).filter(Boolean).map(stationOf);
+}
+
 function stationNames(product) {
-  if (!isPromo(product)) return [stationName(product)];
-  return product.components.map((part) => productById(part.productId)).filter(Boolean).map(stationName);
+  return stationsOfProduct(product).map((station) => station?.name || 'RETIRO');
+}
+
+/**
+ * Color del stand para pintar la tarjeta y la linea del carro. Una promo toma
+ * el color solo si todo lo que incluye sale del mismo stand.
+ */
+function productColor(product) {
+  const colors = new Set(stationsOfProduct(product).map((station) => station?.color || ''));
+  return colors.size === 1 ? [...colors][0] : '';
+}
+
+function colorStyle(product) {
+  const color = productColor(product);
+  return color ? `--station:${color}` : null;
 }
 
 function describeComponents(product) {
@@ -156,8 +178,10 @@ function renderProducts() {
     // agotado y fuera del carro: no se puede tocar. Si ya esta en el carro se deja para poder bajar la cantidad
     const soldOut = left === 0 && !inCart;
     const promo = isPromo(product);
+    const style = colorStyle(product);
     return el('div', {
-      class: `product ${inCart ? 'in-cart' : ''} ${soldOut ? 'sold-out' : ''} ${promo ? 'promo' : ''}`,
+      class: `product ${inCart ? 'in-cart' : ''} ${soldOut ? 'sold-out' : ''} ${promo ? 'promo' : ''} ${style ? 'tinted' : ''}`,
+      style,
       role: 'button',
       tabindex: soldOut ? '-1' : '0',
       'aria-disabled': soldOut ? 'true' : null,
@@ -274,7 +298,7 @@ function renderCart() {
     items.replaceChildren(el('p', { class: 'empty', text: 'Toca un producto para agregarlo al pedido.' }));
   } else {
     const usage = cartUsage();
-    items.replaceChildren(...[...cart.values()].map((entry) => el('div', { class: 'line' }, [
+    items.replaceChildren(...[...cart.values()].map((entry) => el('div', { class: `line ${colorStyle(entry.product) ? 'tinted' : ''}`, style: colorStyle(entry.product) }, [
       el('span', { class: 'name', text: entry.product.name }),
       el('span', { class: 'total', text: money(entry.product.price * entry.qty) }),
       isPromo(entry.product) ? el('span', { class: 'includes', text: describeComponents(entry.product) }) : null,
@@ -457,8 +481,17 @@ function openChargeDialog() {
 }
 
 function describeStations() {
-  const names = new Set([...cart.values()].flatMap((entry) => stationNames(entry.product)));
-  return names.size > 1 ? `${names.size} tickets de retiro: ${[...names].join(', ')}` : `Retiro en ${[...names][0]}`;
+  // los stands sin ticket (ej: entradas) no se retiran en ningun lado
+  const names = new Set([...cart.values()]
+    .flatMap((entry) => stationsOfProduct(entry.product))
+    .filter((station) => station?.printTicket !== false)
+    .map((station) => station?.name || 'RETIRO'));
+  const pickup = !names.size
+    ? 'Sin ticket de retiro'
+    : names.size > 1 ? `${names.size} tickets de retiro: ${[...names].join(', ')}` : `Retiro en ${[...names][0]}`;
+  // igual que el servidor: sin boleta solo si nada del pedido la lleva
+  const noReceipt = [...cart.values()].every((entry) => stationsOfProduct(entry.product).every((station) => station?.printReceipt === false));
+  return noReceipt ? `${pickup} - sin boleta` : pickup;
 }
 
 function cashSuggestions(total) {

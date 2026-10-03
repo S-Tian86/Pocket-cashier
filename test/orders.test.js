@@ -246,3 +246,30 @@ test('los precios quedan congelados en el pedido aunque cambie el catalogo', asy
 
   await store.saveProduct({ ...completo, price: originalPrice }); // deja el catalogo como estaba
 });
+
+test('un stand sin boleta ni ticket (entradas) no imprime pero suma en el cierre', async () => {
+  const { completo } = await catalogIds();
+  const station = await store.saveStation({ name: 'ENTRADAS' });
+  assert.match(station.color, /^#[0-9a-f]{6}$/); // los stands nuevos traen color
+  await store.saveStation({ ...station, printReceipt: false, printTicket: false });
+  const entrada = await store.saveProduct({ name: 'Entrada', price: 3000, stationId: station.id, category: 'Entradas' });
+
+  const solo = await store.createOrder({ items: [{ productId: entrada.id, qty: 2 }] });
+  assert.equal(buildOrderDocuments(solo).length, 0);
+  // a pedido explicito desde Pedidos si se imprime
+  assert.equal(buildOrderDocuments(solo, { what: 'receipt' }).length, 1);
+
+  const mixto = await store.createOrder({ items: [{ productId: entrada.id, qty: 1 }, { productId: completo.id, qty: 1 }] });
+  const documents = buildOrderDocuments(mixto);
+  assert.deepEqual(documents.map((doc) => doc.kind), ['receipt', 'station']);
+  const receipt = documents[0].ticket.previewText();
+  assert.match(receipt, /Entrada/); // la boleta sale completa para cuadrar con lo pagado
+  assert.match(receipt, /RETIRA EN:\n 1\. COCINA/);
+  assert.doesNotMatch(documents[1].ticket.previewText(), /1 de/);
+
+  const report = await dailyReport();
+  assert.ok(report.byStation.some((row) => row.name === 'ENTRADAS' && row.total >= 9000));
+
+  await store.saveProduct({ ...entrada, active: false });
+  await store.saveStation({ ...station, active: false });
+});

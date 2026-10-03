@@ -20,6 +20,7 @@ export function pickupLines(order) {
           promo: item.name,
           stationId: component.stationId ?? null,
           stationName: component.stationName || 'RETIRO',
+          noTicket: Boolean(component.noTicket),
           amount: shares[index],
         });
       });
@@ -32,6 +33,7 @@ export function pickupLines(order) {
         promo: '',
         stationId: item.stationId ?? null,
         stationName: item.stationName || 'RETIRO',
+        noTicket: Boolean(item.noTicket),
         amount: item.subtotal,
       });
     }
