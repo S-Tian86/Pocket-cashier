@@ -118,13 +118,24 @@ export function buildReceipt(order, { copyLabel = '' } = {}) {
   return ticket;
 }
 
+/**
+ * Numero del ticket de retiro con la inicial del stand (B-0004): en la fila del
+ * stand se distingue de un vistazo un ticket que va a otro stand.
+ */
+export function pickupCode(order, group) {
+  const initial = group.stationId == null
+    ? ''
+    : (String(group.stationName || '').normalize('NFD').match(/[a-z0-9]/i)?.[0] || '').toUpperCase();
+  return initial ? `${initial}-${order.code}` : `PEDIDO ${order.code}`;
+}
+
 export function buildStationTicket(order, group, index, totalTickets) {
   const ticket = newTicket();
   ticket.align('center');
   ticket.size(2, 2).bold(true).wrapped(group.stationName).bold(false).size(1, 1);
   ticket.line('TICKET DE RETIRO');
   ticket.sep('=');
-  ticket.size(2, 2).bold(true).line(`PEDIDO ${order.code}`).bold(false).size(1, 1);
+  ticket.size(2, 2).bold(true).line(pickupCode(order, group)).bold(false).size(1, 1);
   if (totalTickets > 1) ticket.line(`Ticket ${index + 1} de ${totalTickets}`);
   ticket.line(humanTime(order.createdAt));
   if (order.status === 'void') ticket.bold(true).line('*** ANULADO ***').bold(false);
