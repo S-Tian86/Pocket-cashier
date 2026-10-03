@@ -127,8 +127,8 @@ function renderCatalog() {
         onchange: (event) => saveStation({ ...station, name: event.target.value }),
       })]),
       el('td', { text: `${count} productos` }),
-      el('td', {}, [stationCheck(station, 'printReceipt', 'Boleta')]),
-      el('td', {}, [stationCheck(station, 'printTicket', 'Ticket')]),
+      el('td', {}, [stationCheck(station, 'printReceipt', 'Venta')]),
+      el('td', {}, [stationCheck(station, 'printTicket', 'Retiro')]),
       el('td', {}, [el('button', {
         class: `tag ${station.active === false ? 'bad' : 'ok'}`,
         style: 'cursor:pointer;border:none',
@@ -139,7 +139,7 @@ function renderCatalog() {
   }));
 }
 
-/** Boleta / Ticket por stand: ej. las entradas se cobran para la cuadratura pero no imprimen nada. */
+/** Ticket de venta / de retiro por stand: ej. las entradas se cobran para la cuadratura pero no imprimen nada. */
 function stationCheck(station, field, label) {
   return el('label', { style: 'display:flex;gap:6px;align-items:center;cursor:pointer;white-space:nowrap' }, [
     el('input', {

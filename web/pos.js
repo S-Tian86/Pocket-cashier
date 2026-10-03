@@ -259,7 +259,7 @@ function setQty(productId, qty) {
   renderProducts();
 }
 
-/** Nota de una linea (ej: "sin mayo"): sale bajo el producto en la boleta y en el ticket del stand. */
+/** Nota de una linea (ej: "sin mayo"): sale bajo el producto en el ticket de venta y en el del stand. */
 function editNote(productId) {
   const entry = cart.get(productId);
   if (!entry) return;
@@ -489,9 +489,9 @@ function describeStations() {
   const pickup = !names.size
     ? 'Sin ticket de retiro'
     : names.size > 1 ? `${names.size} tickets de retiro: ${[...names].join(', ')}` : `Retiro en ${[...names][0]}`;
-  // igual que el servidor: sin boleta solo si nada del pedido la lleva
+  // igual que el servidor: sin ticket de venta solo si nada del pedido lo lleva
   const noReceipt = [...cart.values()].every((entry) => stationsOfProduct(entry.product).every((station) => station?.printReceipt === false));
-  return noReceipt ? `${pickup} - sin boleta` : pickup;
+  return noReceipt ? `${pickup} - sin ticket de venta` : pickup;
 }
 
 function cashSuggestions(total) {

@@ -1,5 +1,5 @@
 // Diseno de los documentos que salen por la impresora:
-//   - la boleta del cliente (detalle + total pagado + vuelto)
+//   - el ticket de venta del cliente (detalle + total pagado + vuelto)
 //   - un ticket de retiro por cada estacion/stand del pedido
 //   - el cierre de caja del dia
 import * as config from './config.js';
@@ -41,7 +41,7 @@ function header(ticket) {
   return ticket;
 }
 
-/** `message: false` omite el pie del negocio ("Gracias por su compra"): solo va en la boleta. */
+/** `message: false` omite el pie del negocio ("Gracias por su compra"): solo va en el ticket de venta. */
 function footer(ticket, order, { message = true } = {}) {
   const business = config.get('business', {});
   const barcodeMode = config.get('printer.barcode', 'code39');
@@ -89,7 +89,7 @@ export function buildReceipt(order, { copyLabel = '' } = {}) {
   ticket.sep('=');
 
   ticket.align('center').size(2, 2).bold(true).line(`PEDIDO ${order.code}`).bold(false).size(1, 1);
-  ticket.line(order.status === 'void' ? '*** ANULADO ***' : 'BOLETA DE VENTA');
+  ticket.line(order.status === 'void' ? '*** ANULADO ***' : 'TICKET DE VENTA');
   if (copyLabel) ticket.line(copyLabel);
   ticket.align('left').sep();
 
@@ -156,7 +156,7 @@ export function buildStationTicket(order, group, index, totalTickets) {
     ticket.size(1, 2);
     ticket.wrapped(`${item.qty} x ${item.name}`);
     ticket.size(1, 1);
-    // la boleta dice el nombre de la promo: el stand ve de cual viene para cuadrar
+    // el ticket de venta dice el nombre de la promo: el stand ve de cual viene para cuadrar
     if (item.promo) ticket.wrapped(`de: ${item.promo}`, { indent: '   ' });
     if (item.note) ticket.wrapped(`(${item.note})`, { indent: '   ' });
   }
@@ -182,8 +182,8 @@ export function buildOrderDocuments(order, { what = 'all' } = {}) {
   const documents = [];
   const groups = ticketGroups(order);
 
-  // sin boleta si todo es de stands que no la llevan (ej: solo entradas); si se mezcla,
-  // la boleta sale completa para que el total cuadre con lo pagado
+  // sin ticket de venta si todo es de stands que no lo llevan (ej: solo entradas); si se
+  // mezcla, sale completo para que el total cuadre con lo pagado
   const receiptNeeded = order.items.some((item) => !item.noReceipt);
   const wantsReceipt = what === 'all' ? tickets.printReceipt !== false && receiptNeeded : what === 'receipt';
   const wantsStations = what === 'all' ? tickets.printStationTickets !== false : what === 'stations' || what.startsWith('station:');
@@ -194,7 +194,7 @@ export function buildOrderDocuments(order, { what = 'all' } = {}) {
       documents.push({
         kind: 'receipt',
         stationId: null,
-        title: `Boleta ${order.code}`,
+        title: `Venta ${order.code}`,
         ticket: buildReceipt(order, { copyLabel: copy > 0 ? 'COPIA' : '' }),
       });
     }

@@ -56,13 +56,13 @@
 
     <div class="card">
       <h2>Stands de retiro</h2>
-      <p class="muted" style="font-size:13px;margin-top:-6px">Cada stand imprime su propio ticket de retiro. Si todo se retira en un solo lugar, deja un solo stand. El color pinta sus productos en caja. Desmarca Boleta y Ticket en lo que solo se cobra para la cuadratura (ej: entradas): igual suma en el cierre. Si un pedido mezcla, la boleta sale completa.</p>
+      <p class="muted" style="font-size:13px;margin-top:-6px">Cada stand imprime su propio ticket de retiro. Si todo se retira en un solo lugar, deja un solo stand. El color pinta sus productos en caja. Desmarca Venta y Retiro en lo que solo se cobra para la cuadratura (ej: entradas): igual suma en el cierre. Si un pedido mezcla, el ticket de venta sale completo.</p>
       <div class="inline-form">
         <div class="field" style="margin:0;flex:1 1 200px"><label>Nombre del stand</label><input id="s-name" placeholder="Ej: COCINA"></div>
         <button class="btn" id="s-add">Agregar stand</button>
       </div>
       <div style="overflow-x:auto"><table>
-        <thead><tr><th>Color</th><th>Stand</th><th>Productos</th><th>Boleta</th><th>Ticket</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Color</th><th>Stand</th><th>Productos</th><th>Ticket venta</th><th>Ticket retiro</th><th>Estado</th><th></th></tr></thead>
         <tbody id="stations"></tbody>
       </table></div>
     </div>
@@ -114,12 +114,12 @@
         <div class="field"><label>Codepage (ESC t)</label><input id="pr-codepage" inputmode="numeric"><div class="hint">CP850 = 2, CP437 = 0</div></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Copias de la boleta</label><input id="t-receipt-copies" inputmode="numeric"></div>
+        <div class="field"><label>Copias del ticket de venta</label><input id="t-receipt-copies" inputmode="numeric"></div>
         <div class="field"><label>Copias de cada ticket de retiro</label><input id="t-station-copies" inputmode="numeric"></div>
         <div class="field"><label>Lineas de avance antes del corte</label><input id="pr-feed" inputmode="numeric"></div>
       </div>
       <div class="choices">
-        <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="t-receipt"> Imprimir boleta</label>
+        <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="t-receipt"> Imprimir ticket de venta</label>
         <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="t-stations"> Imprimir tickets de retiro</label>
         <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="pr-cut"> Cortar papel (desmarcado: linea para cortar con tijera)</label>
         <label class="choice" style="flex:0 0 auto"><input type="checkbox" id="pr-drawer"> Abrir cajon de dinero</label>
