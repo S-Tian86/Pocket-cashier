@@ -74,6 +74,9 @@ test('un pedido con dos stands genera boleta mas un ticket por stand', async () 
   assert.match(cocina, /COCINA/);
   assert.match(cocina, new RegExp(`2 x ${completo.name}`));
   assert.match(cocina, /Cliente: Juan/);
+  // el numero de retiro lleva la inicial del stand, no "PEDIDO"
+  assert.match(cocina, new RegExp(`C-${order.code}`));
+  assert.doesNotMatch(cocina, /PEDIDO/);
   // el ticket de cocina no debe llevar los productos del bar
   assert.doesNotMatch(cocina, new RegExp(bebida.name));
 });

@@ -219,13 +219,14 @@ RETIRA EN 2 STANDS:
         ||| 0042 |||             ← código de barras (o QR)
 ```
 
-Y en seguida, un ticket por stand con el mismo número de pedido:
+Y en seguida, un ticket por stand con el mismo número de pedido, precedido por la inicial del
+stand (si dos stands empiezan con la misma letra, el nombre arriba del ticket los distingue):
 
 ```
          COCINA
        TICKET DE RETIRO
 ================================
-        PEDIDO 0042
+         C-0042
          Ticket 1 de 2
              20:15
 --------------------------------
